@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="JB Importes - O melhor da moda masculina, feminina e eletrônicos premium.">
+    <meta name="theme-color" content="#1a1a1a">
+
+    <title>JB Importes | Moda & Eletrônicos</title>
+    
+    <link rel="icon" href="img/logo.joao.png" type="image/jpeg">
+    <link rel="manifest" href="manifest.json">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/components.css">
+    
+    <style>
+        .hero-slider-container { position: relative; width: 100%; height: 280px; overflow: hidden; border-radius: 20px; margin-bottom: 30px; }
+        .hero-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1s ease-in-out; display: flex; align-items: center; padding: 40px; }
+        .hero-slide.active { opacity: 1; z-index: 2; }
+        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 100%); z-index: 1; }
+        .hero-content { position: relative; z-index: 3; color: white; max-width: 500px; animation: slideUp 0.8s ease; }
+        .hero-content h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 10px; }
+        .hero-content p { font-size: 1rem; margin-bottom: 20px; opacity: 0.9; }
+        .btn-hero { background: #ff5100; color: white; padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .btn-hero:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255, 81, 0, 0.4); }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        @media(max-width: 768px) {
+            .hero-slider-container { height: 350px; border-radius: 0; margin-left: -20px; margin-right: -20px; width: auto; }
+            .hero-content h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-principal"> 
+        <div class="container header-content">
+            <div class="logo-area">
+                <a href="index.html">
+                    <img src="img/logo.joao.png" alt="Logo JB Importes" class="logo-site">
+                </a>
+                <div class="logo-text-wrap" style="margin-left: 10px;">
+                    <span style="display:block; font-weight:800; font-size:1.2rem; line-height:1; letter-spacing: -1px;">JB</span>
+                    <span style="color:#ff5100; font-weight:700; font-size:0.8rem; letter-spacing: 1px;">IMPORTES</span>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="inputBusca" placeholder="Buscar iPhone, Camisa...">
+            </div>
+        </div>
+    </header>
+
+    <nav class="navegacao-premium">
+        <div class="container">
+            <div class="trilho-categorias" id="trilho-principal"></div>
+            <div id="container-subcategorias" style="margin-top: 5px;">
+                <select id="filtro-subcategoria" style="padding: 8px; border-radius: 20px; border: 1px solid #ddd; width: 100%; display: none;">
+                    <option value="">Ver Tudo</option>
+                </select>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+      <section class="hero-slider-container">
+            <div class="hero-slide active" style="background-color: #1a1a1a;">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <h1>JB <span style="color:#ff5100">Importes</span></h1>
+                    <p>Carregando novidades...</p>
+                    <a href="#" class="btn-hero" style="pointer-events: none; opacity: 0.7;">
+                        Aguarde... <i class="fas fa-circle-notch fa-spin"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <div class="titulo-secao">
+            <h2 style="font-size: 1.5rem; margin:0;">Destaques</h2>
+            <p style="font-size: 0.9rem; color: #666; margin:0;">Novidades exclusivas</p>
+        </div>
+
+        <section id="lista-produtos" class="grid-produtos">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+        </section>
+    </main>
+
+    <div id="modal-detalhes" class="modal-overlay" style="display: none;">
+        <div class="modal-conteudo">
+            <button class="fechar-modal">&times;</button>
+            <div id="conteudo-modal-dinamico">
+                </div>
+        </div>
+    </div>
+
+    <div id="cart-modal" class="cart-modal" style="display: none;">
+        <div class="cart-content">
+            <div class="cart-header">
+                <h2>Sacola de Compras</h2>
+                <button id="close-cart-btn" class="close-btn">&times;</button>
+            </div>
+            <div id="cart-items" class="cart-items-list">
+                </div>
+            <div class="cart-footer">
+                </div>
+        </div>
+    </div>
+
+    <footer class="footer-principal">
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <h3>JB<span style="color:#ff5100">IMPORTES</span></h3>
+                <p>Referência em moda e tecnologia.</p>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/jbimportes_" target="_blank"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/5583996695516" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Navegação</h4>
+                <ul style="padding:0; list-style:none;">
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="./admin/dashboard.html">Painel Admin</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 JB Importes.</p>
+        </div>
+    </footer>
+
+    <div id="cart-float" class="cart-btn-float">
+        <i class="fas fa-shopping-bag"></i>
+        <span id="cart-count" class="cart-badge">0</span>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>

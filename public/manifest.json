@@ -1,0 +1,26 @@
+{
+  "name": "JB Importes - Moda e Acessórios",
+  "short_name": "JB Importes",
+  "description": "As melhores tendências em roupas, calçados e acessórios com entrega rápida.",
+  "start_url": "/index.html?utm_source=pwa",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["shopping", "fashion"],
+  "icons": [
+    {
+      "src": "/img/logo.joao.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/logo.joao.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

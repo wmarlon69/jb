@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - JB Importes</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/sales.css">
+</head>
+<body style="display: none;">
+
+    <div class="menu-overlay" onclick="toggleMenu()"></div>
+    <button class="btn-menu-mobile" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="dashboard-wrapper">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>JB<span>Painel</span></h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="btn-menu-admin ativo" onclick="alternarAba('produtos', this)">
+                    <i class="fas fa-box"></i> Produtos
+                </button>
+                
+                <button class="btn-menu-admin" onclick="alternarAba('vendas', this)" id="btn-menu-vendas">
+                    <i class="fas fa-shopping-cart"></i> Gestão de Vendas
+                </button>
+
+                <button class="btn-menu-admin" onclick="alternarAba('cupons', this)">
+                    <i class="fas fa-ticket-alt"></i> Cupons
+                </button>
+                <button class="btn-menu-admin" onclick="alternarAba('banners', this)">
+                    <i class="fas fa-images"></i> Banners (Site)
+                </button>
+                <button class="btn-menu-admin" onclick="alternarAba('notas', this)">
+                    <i class="fas fa-sticky-note"></i> Bloco de Notas
+                </button>
+
+                <a href="../index.html" target="_blank">
+                    <i class="fas fa-eye"></i> Ver Vitrine
+                </a>
+
+                <button class="logout-btn" id="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-bar">
+                <div class="search-admin" id="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="input-busca" placeholder="Buscar produto...">
+                </div>
+                <div class="user-profile">
+                    <img src="../img/logo.joao.png" alt="Admin">
+                </div>
+            </header>
+
+            <section id="sec-produtos" class="secao-admin ativa">
+                <div class="stats-cards">
+                    <div class="card-stat">
+                        <h3>Total Produtos</h3>
+                        <p id="total-produtos">0</p>
+                    </div>
+                    <div class="card-stat">
+                        <h3>Total Cliques</h3>
+                        <p id="total-views" class="stat-cliques">0</p>
+                    </div>
+                    <div class="card-stat">
+                        <h3>Esgotados</h3>
+                        <p id="total-esgotados" class="stat-esgotados">0</p>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <h2>Inventário</h2>
+                    <button class="btn-add" onclick="window.abrirModal()">
+                        <i class="fas fa-plus"></i> Novo Produto
+                    </button>
+                </div>
+
+                <div class="admin-grid-produtos" id="lista-produtos-admin">
+                    <p>Carregando produtos...</p>
+                </div>
+            </section>
+            <section id="sec-vendas" class="secao-admin">
+                
+                <div class="vendas-header" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
+                    <h2 style="margin-bottom: 15px;">Gestão de Pedidos</h2>
+                    
+                    <div class="filtros-venda" style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button onclick="window.filtrarPedidos('pendente')" class="btn-filtro" id="filtro-pendente" 
+                            style="padding:10px 20px; border:none; border-radius:20px; background:#f1c40f; color:#fff; font-weight:bold; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <i class="far fa-clock"></i> A Receber
+                        </button>
+                        
+                        <button onclick="window.filtrarPedidos('pago')" class="btn-filtro" id="filtro-pago" 
+                            style="padding:10px 20px; border:none; border-radius:20px; background:#e0e0e0; color:#555; font-weight:bold; cursor:pointer;">
+                            <i class="fas fa-check-double"></i> Concluídos
+                        </button>
+            
+                        <button onclick="window.mostrarResumoMensal()" class="btn-filtro" 
+                            style="padding:10px 20px; border:none; border-radius:20px; background:#3498db; color:#fff; font-weight:bold; cursor:pointer; margin-left:auto;">
+                            <i class="fas fa-chart-line"></i> Fechamento Mensal
+                        </button>
+                    </div>
+                </div>
+            
+                <div class="lista-pedidos-container" id="lista-pedidos-render">
+                    <p style="text-align:center; color:#888;">Carregando pedidos...</p>
+                </div>
+            
+                <div id="painel-mensal" style="display:none; background:#f8f9fa; padding:30px; border-radius:10px; margin-top:20px; border:1px solid #ddd; text-align:center;">
+                    <h3 style="color:#333; margin-bottom:20px;">💰 Fechamento deste Mês</h3>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; max-width:600px; margin:0 auto;">
+                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                            <p style="color:#666; font-size:0.9rem;">Total Vendido (Pago)</p>
+                            <strong id="total-mes-valor" style="font-size:1.8rem; color:#27ae60;">R$ 0,00</strong>
+                        </div>
+                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                            <p style="color:#666; font-size:0.9rem;">Pedidos Finalizados</p>
+                            <strong id="total-mes-qtd" style="font-size:1.8rem; color:#333;">0</strong>
+                        </div>
+                    </div>
+            
+                    <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
+                    <button onclick="window.filtrarPedidos('pendente')" style="padding:10px 25px; cursor:pointer; background:#333; color:white; border:none; border-radius:5px;">
+                        Voltar para Pedidos
+                    </button>
+                </div>
+            </section>
+
+            <section id="sec-cupons" class="secao-admin">
+                <div class="section-header">
+                    <h2>Gerenciar Descontos</h2>
+                </div>
+                <div class="admin-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="codigo-cupom">Código do Cupom</label>
+                            <input type="text" id="codigo-cupom" placeholder="Ex: CLIENTEVIP">
+                        </div>
+                        <div class="form-group">
+                            <label for="porcentagem-cupom">Desconto (%)</label>
+                            <input type="number" id="porcentagem-cupom" placeholder="Ex: 10">
+                        </div>
+                    </div>
+                    <button onclick="window.salvarCupomBanco()" class="btn-cupom">
+                        <i class="fas fa-check"></i> Criar Cupom
+                    </button>
+                </div>
+                <h3 style="margin-bottom:15px; margin-top:30px;">Cupons Ativos</h3>
+                <div class="lista-cupons" id="lista-cupons-render"></div>
+            </section>
+
+            <section id="sec-banners" class="secao-admin">
+                <div class="section-header">
+                    <h2>Gestão de Banners (Vitrine)</h2>
+                </div>
+                <div class="banners-grid-fixa">
+                    <div class="banner-slot">
+                        <h3>Banner 1</h3>
+                        <img id="img-preview-1" src="../img/sem-foto.png" alt="Preview Banner 1">
+                        <input type="file" id="input-banner-1" hidden onchange="window.uploadBannerFixo(1)">
+                        <button onclick="document.getElementById('input-banner-1').click()" class="btn-trocar-banner">Trocar</button>
+                        <p id="status-1" class="status-upload"></p>
+                    </div>
+                    <div class="banner-slot">
+                        <h3>Banner 2</h3>
+                        <img id="img-preview-2" src="../img/sem-foto.png" alt="Preview Banner 2">
+                        <input type="file" id="input-banner-2" hidden onchange="window.uploadBannerFixo(2)">
+                        <button onclick="document.getElementById('input-banner-2').click()" class="btn-trocar-banner">Trocar</button>
+                        <p id="status-2" class="status-upload"></p>
+                    </div>
+                    <div class="banner-slot">
+                        <h3>Banner 3</h3>
+                        <img id="img-preview-3" src="../img/sem-foto.png" alt="Preview Banner 3">
+                        <input type="file" id="input-banner-3" hidden onchange="window.uploadBannerFixo(3)">
+                        <button onclick="document.getElementById('input-banner-3').click()" class="btn-trocar-banner">Trocar</button>
+                        <p id="status-3" class="status-upload"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-notas" class="secao-admin">
+                <div class="section-header">
+                    <h2>Bloco de Notas</h2>
+                </div>
+                <div class="bloco-notas-admin">
+                    <textarea id="meu-rascunho" placeholder="Suas anotações aqui..."></textarea>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="modal-produto" class="modal-admin">
+        <div class="modal-content">
+            <span class="close" onclick="window.fecharModal()">&times;</span>
+            <h2 id="titulo-modal">Novo Produto</h2>
+            
+            <form id="form-produto" onsubmit="window.salvarProduto(event)">
+                <div class="form-group">
+                    <label for="prod-nome">Nome do Produto</label>
+                    <input type="text" id="prod-nome" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prod-categoria">Categoria</label>
+                        <select id="prod-categoria" onchange="window.atualizarSubcategorias()" required>
+                            <option value="">Selecione</option>
+                            <option value="masculino">Masculino</option>
+                            <option value="feminino">Feminino</option>
+                            <option value="infantil">Infantil</option>
+                            <option value="eletronicos">Eletrônicos</option>
+                            <option value="promocao">Promoção</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="prod-sub">Subcategoria</label>
+                        <select id="prod-sub" disabled>
+                            <option value="">Selecione a categoria primeiro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prod-preco">Preço (Ex: 99,90)</label>
+                        <input type="text" id="prod-preco" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prod-antigo">Preço Antigo (Opcional)</label>
+                        <input type="text" id="prod-antigo">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-estoque">Estoque (unidades)</label>
+                    <input type="number" id="prod-estoque" value="10" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-resumo">Resumo (aparece na vitrine)</label>
+                    <textarea id="prod-resumo" rows="2"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="prod-desc">Descrição Completa</label>
+                    <textarea id="prod-desc" rows="4"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Galeria de Fotos (até 5)</label>
+                    <input type="file" id="input-arquivo-foto" multiple hidden>
+                    <button type="button" onclick="document.getElementById('input-arquivo-foto').click()" class="btn-upload">Adicionar Fotos</button>
+                    <div id="galeria-preview" class="galeria-preview-container"></div>
+                    <p id="status-upload"></p>
+                </div>
+
+                <button type="submit" class="btn-save">Salvar Produto</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="../js/dashboard.js"></script> <script type="module" src="../js/inventory.js"></script>
+    <script type="module" src="../js/sales.js"></script>
+
+</body>
+</html>
