@@ -1,4 +1,4 @@
-/* public/js/inventory.js - VERSÃO 24.0 (COM CORREÇÃO DE ROTA) */
+/* public/js/inventory.js - VERSÃO COM SUPORTE A TAMANHOS */
 
 import { db, auth } from "../core/firebase-config.js";
 import { 
@@ -90,6 +90,8 @@ window.salvarProduto = async (e) => {
     const btn = e.target.querySelector('.btn-save');
     if (galeriaAtual.length === 0) { alert("Adicione pelo menos uma foto!"); return; }
     btn.disabled = true; btn.innerText = "Salvando...";
+    
+    // --- ATENÇÃO: Aqui está a atualização para salvar os TAMANHOS ---
     const dados = {
         nome: document.getElementById('prod-nome').value,
         categoria: document.getElementById('prod-categoria').value,
@@ -97,11 +99,13 @@ window.salvarProduto = async (e) => {
         preco: document.getElementById('prod-preco').value,
         precoAntigo: document.getElementById('prod-antigo').value,
         estoque: parseInt(document.getElementById('prod-estoque').value) || 0,
+        tamanhos: document.getElementById('prod-tamanhos').value, // <--- NOVA LINHA ADICIONADA
         resumo: document.getElementById('prod-resumo').value,
         descricao: document.getElementById('prod-desc').value,
         galeria: galeriaAtual,
         imagem: galeriaAtual[0],
     };
+
     try {
         if (idProdutoEmEdicao) {
             await updateDoc(doc(db, "produtos", idProdutoEmEdicao), dados);
@@ -167,6 +171,10 @@ window.editarProduto = (id, p) => {
     document.getElementById('prod-preco').value = p.preco || "";
     document.getElementById('prod-antigo').value = p.precoAntigo || "";
     document.getElementById('prod-estoque').value = p.estoque || 0;
+    
+    // --- ATENÇÃO: Carregando os tamanhos para edição ---
+    document.getElementById('prod-tamanhos').value = p.tamanhos || ""; 
+
     document.getElementById('prod-resumo').value = p.resumo || "";
     document.getElementById('prod-desc').value = p.descricao || "";
     document.getElementById('prod-categoria').value = p.categoria || "";
@@ -270,11 +278,10 @@ window.fecharModal = () => {
     document.getElementById('modal-produto').style.display = 'none';
 };
 
-/* public/js/inventory.js - PARTE FINAL CORRIGIDA */
+/* public/js/inventory.js - PARTE FINAL */
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        // ALTERADO: Agora aponta para o seu ficheiro real de login
         window.location.href = "login.html";
     } else {
         window.carregarProdutos();
@@ -290,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLogout.addEventListener('click', async () => {
             if(confirm("Deseja realmente sair?")) {
                 await signOut(auth);
-                // ALTERADO: Ao sair, volta para o login.html
                 window.location.href = "login.html";
             }
         });
@@ -305,5 +311,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.style.display = nomeProduto.includes(termo) ? 'flex' : 'none';
             });
         });
+    }
+});
+
+/* --- SISTEMA DE FRETE --- */
+
+window.salvarFreteBanco = async () => {
+    const nome = document.getElementById('nome-cidade').value.trim();
+    const valor = parseFloat(document.getElementById('valor-frete').value);
+
+    if (!nome || isNaN(valor)) { alert("Preencha o nome e o valor do frete!"); return; }
+
+    try {
+        await addDoc(collection(db, "locais_entrega"), { 
+            nome: nome, 
+            valor: valor, 
+            ativo: true 
+        });
+        document.getElementById('nome-cidade').value = "";
+        document.getElementById('valor-frete').value = "";
+        window.carregarFretesBanco();
+        alert("Local adicionado com sucesso!");
+    } catch (e) { alert("Erro ao salvar local."); console.error(e); }
+};
+
+window.carregarFretesBanco = async () => {
+    const lista = document.getElementById('lista-fretes-render');
+    if (!lista) return;
+    
+    lista.innerHTML = "Carregando locais...";
+    
+    // Busca ordenando por valor (do mais barato pro mais caro)
+    const q = query(collection(db, "locais_entrega"), orderBy("valor", "asc"));
+    const snap = await getDocs(q);
+    
+    lista.innerHTML = snap.empty ? "<p>Nenhum local cadastrado.</p>" : "";
+    
+    snap.forEach((docSnap) => {
+        const f = docSnap.data();
+        lista.innerHTML += `
+            <div class="item-cupom" style="border-left: 4px solid #2980b9;">
+                <div>
+                    <strong>${f.nome}</strong> 
+                    <span style="color: #666;">- Frete: R$ ${f.valor.toFixed(2)}</span>
+                </div>
+                <button onclick="window.deletarFreteBanco('${docSnap.id}')" class="btn-del-cupom">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`;
+    });
+};
+
+window.deletarFreteBanco = async (id) => {
+    if (confirm("Deseja remover este local de entrega?")) {
+        await deleteDoc(doc(db, "locais_entrega", id));
+        window.carregarFretesBanco();
+    }
+};
+
+// Adicione esta linha no seu DOMContentLoaded ou onde você inicializa as outras coisas
+// para carregar a lista quando abrir a aba (ou a página)
+// window.carregarFretesBanco();
+/* --- GATILHO INICIAL (Isso que faltava) --- */
+document.addEventListener("DOMContentLoaded", () => {
+    
+    // Verifica se estamos na tela que tem a lista de fretes
+    const listaContainer = document.getElementById('lista-fretes-render');
+    
+    if (listaContainer) {
+        console.log("Iniciando carregamento de fretes...");
+        window.carregarFretesBanco();
     }
 });

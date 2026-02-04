@@ -1,4 +1,4 @@
-/* public/js/main.js - VERSÃO FINAL ATUALIZADA - PARTE 1 */
+/* public/js/main.js - VERSÃO FINAL COMPLETA (PARTE 1/2) */
 
 import { db } from "../core/firebase-config.js";
 import { 
@@ -12,6 +12,13 @@ const TEMPO_EXPIRACAO = 10 * 60 * 1000;
 let carrinho = JSON.parse(localStorage.getItem('cart_jb')) || [];
 let listaProdutosGlobal = [];
 let descontoAtivo = 0;
+
+// --- VARIÁVEIS DO FRETE ---
+let listaLocaisEntrega = []; 
+let entregaSelecionada = { id: 'retirada', nome: '📍 Retirada na Loja', valor: 0 };
+
+// --- VARIÁVEL GLOBAL DE TAMANHO ---
+window.tamanhoSelecionadoModal = "";
 
 const estruturaCategorias = {
     "todos": { label: "Tudo", icon: "th-large", subs: [] },
@@ -72,7 +79,40 @@ function iniciarAnimacaoSlider(qtd) {
     }, 5000);
 }
 
-// --- CARREGAR VITRINE (VERSÃO TEMPO REAL) ---
+/* --- CARREGAR FRETE (COLE ISTO SUBSTITUINDO A ANTERIOR) --- */
+async function carregarOpcoesEntrega() {
+    // Limpa a lista para começar do zero
+    listaLocaisEntrega = [{ id: 'retirada', nome: '📍 Retirada na Loja', valor: 0 }];
+    
+    try {
+        const q = query(collection(db, "locais_entrega"), orderBy("valor", "asc"));
+        const snap = await getDocs(q);
+        
+        snap.forEach(doc => {
+            const dados = doc.data();
+            
+            // TRAVA DE SEGURANÇA: Só adiciona se o ID ainda não estiver na lista
+            const existe = listaLocaisEntrega.some(item => item.id === doc.id);
+            
+            if (!existe) {
+                listaLocaisEntrega.push({ 
+                    id: doc.id, 
+                    nome: `🚚 ${dados.nome}`, 
+                    valor: dados.valor 
+                });
+            }
+        });
+        
+        console.log("Locais carregados:", listaLocaisEntrega.length);
+        
+        // Atualiza a tela se o carrinho já estiver aberto
+        if (carrinho.length > 0) {
+            atualizarCarrinhoUI();
+        }
+
+    } catch (e) { console.error("Erro ao carregar frete:", e); }
+}
+
 function carregarVitrine() {
     const container = document.getElementById('lista-produtos');
     if (!container) return;
@@ -155,31 +195,50 @@ function renderizarProdutos(lista) {
     });
     container.appendChild(fragmento);
 }
-/* public/js/main.js - VERSÃO FINAL ATUALIZADA - PARTE 2 */
+/* public/js/main.js - VERSÃO FINAL COMPLETA (PARTE 2/2) */
 
 function abrirDetalhes(id) {
     const produto = listaProdutosGlobal.find(p => p.id === id);
     if (!produto) return;
+    
+    // Reset da seleção de tamanho
+    window.tamanhoSelecionadoModal = ""; 
+    
     registrarInteresse(id); 
     const modal = document.getElementById('modal-detalhes');
     const container = document.getElementById('conteudo-modal-dinamico');
     const imagens = produto.galeria || [produto.imagem];
+    
     let htmlMiniaturas = '';
     if (imagens.length > 1) {
         htmlMiniaturas = `<div class="miniaturas-scroll">
             ${imagens.map((img, i) => `<img src="${img}" class="miniatura-item ${i===0?'ativa':''}" data-action="trocar-foto" data-src="${img}">`).join('')}
             </div>`;
     }
+
+    let htmlTamanhos = '';
+    if (produto.tamanhos && produto.tamanhos.trim() !== "") {
+        const lista = produto.tamanhos.split(',');
+        htmlTamanhos = `
+            <div class="seletor-tamanho">
+                <h4 style="margin-bottom:8px; font-size:0.9rem;">Escolha o Tamanho:</h4>
+                <div class="tamanhos-grid" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:15px;">
+                    ${lista.map(t => `<button class="btn-tamanho-opcao" onclick="window.selecionarTamanhoUI(this)">${t.trim()}</button>`).join('')}
+                </div>
+            </div>`;
+    }
+
     const estoque = (produto.estoque !== undefined) ? produto.estoque : 10;
     const isEsgotado = estoque <= 0;
     const botoesAcao = isEsgotado 
         ? `<button class="btn-comprar-agora" disabled style="background:#ccc;">Produto Esgotado</button>` 
         : `<button class="btn-comprar-agora" data-action="comprar-direto" data-id="${produto.id}">
-             <i class="fab fa-whatsapp"></i> Comprar
+             <i class="fab fa-whatsapp"></i> Comprar Agora
            </button>
            <button class="btn-add-detalhe" data-action="adicionar-carrinho" data-id="${produto.id}">
-             <i class="fas fa-cart-plus"></i>
+             <i class="fas fa-cart-plus"></i> Adicionar à Sacola
            </button>`;
+
     container.innerHTML = `
         <div class="modal-galeria-container">
             <img id="img-principal-modal" src="${imagens[0]}" class="foto-principal">
@@ -189,15 +248,25 @@ function abrirDetalhes(id) {
             <span class="marca-detalhe">${produto.categoria} > ${produto.subcategoria || ''}</span>
             <h2 class="titulo-detalhe">${produto.nome}</h2>
             <p class="preco-por-grande">${produto.preco}</p>
+            
+            ${htmlTamanhos}
+
             <div class="descricao-box">
                 <h4>Descrição</h4>
                 <p>${produto.descricao ? produto.descricao.replace(/\n/g, '<br>') : 'Sem descrição detalhada.'}</p>
             </div>
             <div class="acoes-detalhe">${botoesAcao}</div>
         </div>`;
+    
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; 
 }
+
+window.selecionarTamanhoUI = (el) => {
+    document.querySelectorAll('.btn-tamanho-opcao').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    window.tamanhoSelecionadoModal = el.innerText;
+};
 
 function trocarFotoPrincipal(el, src) {
     document.getElementById('img-principal-modal').src = src;
@@ -208,6 +277,7 @@ function trocarFotoPrincipal(el, src) {
 function fecharModalDetalhes() {
     document.getElementById('modal-detalhes').style.display = 'none';
     document.body.style.overflow = 'auto';
+    window.tamanhoSelecionadoModal = "";
 }
 
 function iniciarSistemaDeCategorias() {
@@ -268,19 +338,31 @@ function filtrarPorCategoria(cat) {
 function adicionarAoCarrinho(id) {
     const produto = listaProdutosGlobal.find(p => p.id === id);
     if (!produto) return;
-    const existe = carrinho.find(item => item.id === id);
+
+    if (produto.tamanhos && produto.tamanhos.trim() !== "" && !window.tamanhoSelecionadoModal) {
+        alert("Por favor, selecione um TAMANHO antes de adicionar à sacola.");
+        return;
+    }
+
+    const existe = carrinho.find(item => item.id === id && item.tamanho === window.tamanhoSelecionadoModal);
+    
     if (existe) {
         existe.qtd++;
     } else {
         const precoNum = parsePreco(produto.preco);
-        carrinho.push({ id: produto.id, nome: produto.nome, preco: precoNum, imagem: (produto.galeria && produto.galeria.length > 0) ? produto.galeria[0] : produto.imagem, qtd: 1 });
+        carrinho.push({ 
+            id: produto.id, 
+            nome: produto.nome, 
+            tamanho: window.tamanhoSelecionadoModal,
+            preco: precoNum, 
+            imagem: (produto.galeria && produto.galeria.length > 0) ? produto.galeria[0] : produto.imagem, 
+            qtd: 1 
+        });
     }
+    
     salvarCarrinho();
     fecharModalDetalhes(); 
-    const modalCart = document.getElementById('cart-modal');
-    if (modalCart.style.display !== 'flex') {
-        toggleCart();
-    }
+    toggleCart();
 }
 
 function removerItem(idx) {
@@ -327,7 +409,7 @@ function atualizarCarrinhoUI() {
                     <div class="cart-item">
                         <div class="cart-item-img"><img src="${item.imagem}"></div>
                         <div class="cart-item-info">
-                            <strong>${item.nome}</strong>
+                            <strong>${item.nome} ${item.tamanho ? `(${item.tamanho})` : ''}</strong>
                             <span>R$ ${sub.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
                         </div>
                         <div class="qtd-selector">
@@ -343,73 +425,148 @@ function atualizarCarrinhoUI() {
     }
 }
 
+window.mudarEntrega = (index) => {
+    entregaSelecionada = listaLocaisEntrega[index];
+    const totalItens = carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
+    atualizarTotais(totalItens);
+};
+
+// --- FUNÇÃO CORRIGIDA PARA LAYOUT VERTICAL NO CELULAR ---
 function atualizarTotais(subtotal) {
     const footer = document.querySelector('.cart-footer');
     if (!footer) return;
+    
     const descontoValor = subtotal * descontoAtivo;
-    const totalFinal = subtotal - descontoValor;
+    const valorFrete = entregaSelecionada ? entregaSelecionada.valor : 0;
+    const totalFinal = (subtotal - descontoValor) + valorFrete;
+
+    // Garante que a lista não esteja vazia
+    if (!listaLocaisEntrega || listaLocaisEntrega.length === 0) {
+        listaLocaisEntrega = [{ id: 'retirada', nome: '📍 Retirada na Loja', valor: 0 }];
+    }
+
+    // --- AQUI ESTÁ A MUDANÇA: CRIA CARTÕES EM VEZ DE SELECT ---
+    const htmlFretes = listaLocaisEntrega.map((opcao, index) => {
+        // Verifica se é a opção selecionada para pintar de laranja
+        const isSelected = (entregaSelecionada && opcao.id === entregaSelecionada.id);
+        const classeAtiva = isSelected ? 'ativo' : '';
+        const precoTxt = opcao.valor === 0 ? 'Grátis' : `R$ ${opcao.valor.toFixed(2)}`;
+        
+        // Retorna um cartão clicável
+        return `
+            <div class="frete-card ${classeAtiva}" onclick="window.mudarEntrega(${index})">
+                <div class="frete-nome">
+                    <div class="radio-icon"></div>
+                    ${opcao.nome.replace('🚚 ', '').replace('📍 ', '')}
+                </div>
+                <div class="frete-valor">${precoTxt}</div>
+            </div>
+        `;
+    }).join('');
+
     footer.innerHTML = `
-        <div class="cupom-area">
-            <div class="cupom-input-group">
-                <input type="text" id="input-cupom" placeholder="CUPOM">
-                <button data-action="aplicar-cupom">APLICAR</button>
-            </div>
-            <small id="msg-cupom">${descontoAtivo > 0 ? `<span style="color:green; font-weight:bold;">Desconto ativo!</span>` : ''}</small>
-        </div>
-        <div class="cart-total">
-            <span>Total:</span>
-            <div style="text-align:right">
-                ${descontoAtivo > 0 ? `<div style="font-size:0.9rem; color:red; text-decoration:line-through;">R$ ${subtotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>` : ''}
-                <span style="font-size:1.4rem;">R$ ${totalFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+            <label style="display:block; font-size: 0.95rem; font-weight: 700; color: #334155; margin-bottom: 12px;">
+                <i class="fas fa-map-marker-alt"></i> Onde você quer receber?
+            </label>
+            
+            <div class="frete-options-container">
+                ${htmlFretes}
             </div>
         </div>
-        <button class="btn-checkout" data-action="enviar-whatsapp">
+
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <input type="text" id="input-cupom" placeholder="CUPOM" style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; text-transform: uppercase;">
+            <button data-action="aplicar-cupom" style="background: #334155; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">OK</button>
+        </div>
+        <div id="msg-cupom" style="margin-bottom: 10px; font-size: 0.85rem; min-height: 20px;">
+            ${descontoAtivo > 0 ? `<span style="color:green; font-weight:bold;">✅ Desconto aplicado!</span>` : ''}
+        </div>
+        
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="color: #64748b; font-size: 0.95rem;">Subtotal:</span>
+                <span style="font-weight: 600; color: #1e293b;">R$ ${subtotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+            </div>
+            
+            ${descontoAtivo > 0 ? `
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="color: #16a34a;">Desconto:</span>
+                <span style="color: #16a34a; font-weight: 600;">- R$ ${descontoValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+            </div>` : ''}
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="color: #64748b; font-size: 0.95rem;">Frete:</span>
+                <span style="color: #ff5100; font-weight: 600;">
+                    ${valorFrete === 0 ? 'Grátis' : `R$ ${valorFrete.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
+                </span>
+            </div>
+            
+            <div style="border-top: 2px dashed #cbd5e1; margin-top: 5px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">Total:</span>
+                <span style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">R$ ${totalFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+            </div>
+        </div>
+
+        <button class="btn-checkout" data-action="enviar-whatsapp" style="margin-top: 20px; width: 100%; padding: 16px; background: #22c55e; color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <i class="fab fa-whatsapp"></i> Finalizar Compra
         </button>`;
 }
 
 function toggleCart() {
     const m = document.getElementById('cart-modal');
-    m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    const vaiAbrir = m.style.display !== 'flex';
+    m.style.display = vaiAbrir ? 'flex' : 'none';
+    document.body.style.overflow = vaiAbrir ? 'hidden' : 'auto';
 }
 
-// --- FUNÇÃO ATUALIZADA: PEDE NOME E ZAP ANTES DE REGISTRAR ---
 async function comprarDireto(id) {
     const produto = listaProdutosGlobal.find(p => p.id === id);
     if (!produto) return;
-    registrarInteresse(id);
 
-    // 1. Pergunta o nome
-    const nomeCliente = prompt("Para agilizar seu pedido, qual seu NOME?");
+    if (produto.tamanhos && produto.tamanhos.trim() !== "" && !window.tamanhoSelecionadoModal) {
+        alert("Por favor, selecione um TAMANHO antes de comprar.");
+        return;
+    }
+
+    const nomeCliente = prompt("Qual seu NOME?");
     if (!nomeCliente) return;
 
-    // 2. Pergunta o Zap (IMPORTANTE PARA O ADMIN)
-    let zapCliente = prompt("Informe seu WhatsApp (DDD+Número) para contato:");
-    if (!zapCliente) return;
-    zapCliente = zapCliente.replace(/\D/g, ''); // Remove traços e parenteses
+    // --- CORREÇÃO AQUI: ABRE A JANELA IMEDIATAMENTE ---
+    // Abre uma janela em branco AGORA, antes de ir pro banco de dados
+    const janelaZap = window.open('', '_blank');
+    if (janelaZap) {
+        janelaZap.document.write("<html><body><h2 style='text-align:center; margin-top:50px; font-family:sans-serif;'>Aguarde... gerando seu pedido! 🚀</h2></body></html>");
+    }
 
-    // 3. Salva no Firebase
+    const tamanhoTxt = window.tamanhoSelecionadoModal ? `\n📏 Tamanho: ${window.tamanhoSelecionadoModal}` : '';
+
     try {
         await addDoc(collection(db, "pedidos"), {
             data: Date.now(),
             clienteNome: nomeCliente,
-            clienteZap: zapCliente, // Agora salvamos o zap do cliente!
-            resumoItens: produto.nome,
+            clienteZap: "Via WhatsApp", 
+            resumoItens: produto.nome + (window.tamanhoSelecionadoModal ? ` (${window.tamanhoSelecionadoModal})` : ''),
             total: produto.preco, 
             status: "pendente",
             zapVendedor: "5583996695516"
         });
-    } catch (e) { console.error("Erro ao registrar pedido:", e); }
+    } catch (e) { console.error("Erro pedido direto:", e); }
 
-    // 4. Abre WhatsApp da loja
     const msg = `*👋 Olá JB Importes!*
 
-Me chamo *${nomeCliente}* e tenho interesse no produto:
-🔹 *${produto.nome}*
-💰 Valor: ${produto.preco}
+Me chamo *${nomeCliente}* e quero:
+🔹 *${produto.nome}*${tamanhoTxt}
+💰 Valor: ${produto.preco}`;
 
-Ainda está disponível?`;
-    window.open(`https://wa.me/5583996695516?text=${encodeURIComponent(msg)}`, '_blank');
+    const linkZap = `https://wa.me/5583996695516?text=${encodeURIComponent(msg)}`;
+
+    // --- REDIRECIONA A JANELA QUE JÁ ESTAVA ABERTA ---
+    if (janelaZap) {
+        janelaZap.location.href = linkZap;
+    } else {
+        window.location.href = linkZap;
+    }
 }
 
 async function aplicarCupom() {
@@ -432,42 +589,43 @@ async function aplicarCupom() {
     salvarCarrinho();
 }
 
-// --- FUNÇÃO CARRINHO ATUALIZADA: PEDE NOME E ZAP ---
 async function enviarPedidoWhatsApp() {
     if (carrinho.length === 0) return; 
 
-    const nomeCliente = prompt("Para finalizar, qual seu NOME?");
+    const nomeCliente = prompt("Qual seu NOME?");
     if (!nomeCliente) return;
 
-    let zapCliente = prompt("Informe seu WhatsApp (DDD+Número):");
-    if (!zapCliente) return;
-    zapCliente = zapCliente.replace(/\D/g, '');
-
-    let total = 0;
-    let texto = `*🛒 PEDIDO SITE - JB IMPORTES*\n*Cliente:* ${nomeCliente}\n\n`;
+    let totalProdutos = 0;
+    let texto = `*🛒 PEDIDO SITE - JB IMPORTES*\n*Cliente:* ${nomeCliente}\n`;
     
     carrinho.forEach(item => {
         const sub = item.preco * item.qtd;
-        total += sub;
-        texto += `▪️ ${item.qtd}x ${item.nome}\n`;
+        totalProdutos += sub;
+        const tamTxt = item.tamanho ? ` [Tam: ${item.tamanho}]` : '';
+        texto += `▪️ ${item.qtd}x ${item.nome}${tamTxt}\n`;
     });
     
-    const desc = total * descontoAtivo;
-    const final = total - desc;
-    const valorFinalFormatado = final.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    const desc = totalProdutos * descontoAtivo;
+    const valorFrete = entregaSelecionada.valor;
+    const final = (totalProdutos - desc) + valorFrete;
 
-    texto += `\nSubtotal: R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    if (descontoAtivo > 0) texto += `\nDesconto: -R$ ${desc.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    texto += `\n*TOTAL: ${valorFinalFormatado}*`;
+    texto += `\n📦 *Modo de Entrega:* ${entregaSelecionada.nome}`;
+    texto += `\n\n💵 Subtotal: R$ ${totalProdutos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    if (descontoAtivo > 0) texto += `\n🏷️ Desconto: - R$ ${desc.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    if (valorFrete > 0) texto += `\n🚚 Frete: R$ ${valorFrete.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    texto += `\n\n*💰 TOTAL A PAGAR: R$ ${final.toLocaleString('pt-BR', {minimumFractionDigits: 2})}*`;
 
     try {
         await addDoc(collection(db, "pedidos"), {
             data: Date.now(),
             clienteNome: nomeCliente,
-            clienteZap: zapCliente, // Salvando zap
+            clienteZap: "Via WhatsApp", 
+            endereco: "A combinar no WhatsApp",
+            tipoEntrega: entregaSelecionada.nome,
+            valorFrete: valorFrete,
             resumoItens: `${carrinho.length} itens (Carrinho)`, 
             detalhesCarrinho: carrinho,
-            total: valorFinalFormatado,
+            total: final, 
             status: "pendente",
             zapVendedor: "5583996695516"
         });
@@ -489,8 +647,6 @@ function configurarBusca() {
         });
     }
 }
-
-// --- EVENT HANDLER ---
 
 function masterEventHandler(event) {
     const el = event.target;
@@ -548,7 +704,10 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarVitrine();
     iniciarSistemaDeCategorias();
     configurarBusca();
-    atualizarCarrinhoUI();
+    
+    carregarOpcoesEntrega().then(() => {
+        atualizarCarrinhoUI();
+    });
 
     document.body.addEventListener('click', masterEventHandler);
 
@@ -566,11 +725,20 @@ document.addEventListener('DOMContentLoaded', () => {
        cartCloseBtn.dataset.action = 'toggle-cart';
     }
 });
+/* --- GATILHO INICIAL: CARREGAR DADOS AO ABRIR O SITE --- */
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("Iniciando a loja...");
 
-// --- CÓDIGO DO PWA (Mantido do index.html para referência futura) ---
-// Para ativar a instalação do App, descomente as linhas abaixo quando tiver o service-worker.js
-/*
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch(e => console.log('PWA:', e));
-}
-*/
+    // 1. Carrega os produtos
+    if (typeof carregarProdutos === 'function') {
+        carregarProdutos();
+    }
+
+    // 2. Carrega as cidades/frete IMEDIATAMENTE
+    if (typeof carregarOpcoesEntrega === 'function') {
+        carregarOpcoesEntrega();
+    }
+    
+    // 3. Atualiza o carrinho visualmente (caso tenha itens salvos)
+    atualizarCarrinhoUI();
+});

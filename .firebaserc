@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "jbimportes-7ec89"
-  }
+  },
+  "targets": {
+    "jbimportes-7ec89": {
+      "hosting": {
+        "loja-nova": [
+          "jbimportes"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

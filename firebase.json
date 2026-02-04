@@ -3,6 +3,7 @@
     "rules": "firestore.rules"
   },
   "hosting": {
+    "target": "loja-nova",
     "public": "public",
     "ignore": [
       "firebase.json",
