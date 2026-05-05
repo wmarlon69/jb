@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - JB Importes</title>
+    <link rel="icon" href="/public/img/favicon.ico" type="image/jpeg">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -30,9 +31,9 @@
                     <i class="fas fa-box"></i> Produtos
                 </button>
                 
-                <button class="btn-menu-admin" onclick="alternarAba('vendas', this)" id="btn-menu-vendas">
-                    <i class="fas fa-shopping-cart"></i> Gestão de Vendas
-                </button>
+              <button class="btn-menu-admin" onclick="alternarAba('vendas', this); if(window.carregarPedidos) window.carregarPedidos()" id="btn-menu-vendas">
+    <i class="fas fa-shopping-cart"></i> Gestão de Vendas
+</button>
 
                 <button class="btn-menu-admin" onclick="alternarAba('cupons', this)">
                     <i class="fas fa-ticket-alt"></i> Cupons

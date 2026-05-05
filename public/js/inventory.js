@@ -1,4 +1,4 @@
-/* public/js/inventory.js - VERSÃO COM SUPORTE A TAMANHOS */
+/* public/js/inventory.js - VERSÃO FINAL (CLOUDINARY ATIVADO) */
 
 import { db, auth } from "../core/firebase-config.js";
 import { 
@@ -9,7 +9,10 @@ import {
     onAuthStateChanged, signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const IMGBB_API_KEY = "34d295b9b31667727e045870489fb873";
+// --- CONFIGURAÇÃO DO CLOUDINARY (SISTEMA 10K) ---
+const CLOUD_NAME = "duw8krx5v"; // Seu Cloud Name
+const UPLOAD_PRESET = "jb_importes"; // <--- PRESET CONFIGURADO!
+
 const SUBCATEGORIAS = {
     "feminino": ["Vestidos", "Blusas & Croppeds", "Calças & Jeans", "Shorts & Saias", "Conjuntos", "Moda Praia"],
     "masculino": ["Camisetas", "Camisas Polo", "Bermudas", "Calças Jeans", "Bonés", "Acessórios"],
@@ -21,6 +24,7 @@ const SUBCATEGORIAS = {
 let idProdutoEmEdicao = null;
 let galeriaAtual = [];
 
+// --- FUNÇÃO DE UPLOAD ATUALIZADA (CLOUDINARY) ---
 function configurarUploadGaleria() {
     const fileInput = document.getElementById('input-arquivo-foto');
     const statusTxt = document.getElementById('status-upload');
@@ -31,20 +35,33 @@ function configurarUploadGaleria() {
         if (files.length === 0) return;
         if (galeriaAtual.length + files.length > 5) { alert("Máximo de 5 fotos!"); return; }
 
-        statusTxt.innerText = `⏳ Enviando...`;
+        statusTxt.innerText = `⏳ Otimizando e Enviando para Cloudinary...`;
+        
         for (const file of files) {
             const formData = new FormData();
-            formData.append("image", file);
+            formData.append("file", file); // Cloudinary pede 'file'
+            formData.append("upload_preset", UPLOAD_PRESET); // Sua chave de acesso segura
+
             try {
-                const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+                // Envia para o Cloudinary
+                const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { 
+                    method: "POST", 
+                    body: formData 
+                });
                 const data = await response.json();
-                if (data.success) {
-                    galeriaAtual.push(data.data.url);
+
+                if (data.secure_url) {
+                    // Sucesso! Adiciona o link seguro (HTTPS)
+                    galeriaAtual.push(data.secure_url);
                     window.renderizarGaleria();
+                } else {
+                    console.error("Erro Cloudinary:", data);
+                    alert("Erro no upload. Verifique o console.");
                 }
             } catch (error) { console.error("Erro upload:", error); }
         }
-        statusTxt.innerText = `✅ ${galeriaAtual.length} foto(s) ok.`;
+        
+        statusTxt.innerText = `✅ ${galeriaAtual.length} foto(s) na nuvem.`;
         fileInput.value = "";
     });
 }
@@ -91,7 +108,6 @@ window.salvarProduto = async (e) => {
     if (galeriaAtual.length === 0) { alert("Adicione pelo menos uma foto!"); return; }
     btn.disabled = true; btn.innerText = "Salvando...";
     
-    // --- ATENÇÃO: Aqui está a atualização para salvar os TAMANHOS ---
     const dados = {
         nome: document.getElementById('prod-nome').value,
         categoria: document.getElementById('prod-categoria').value,
@@ -99,11 +115,11 @@ window.salvarProduto = async (e) => {
         preco: document.getElementById('prod-preco').value,
         precoAntigo: document.getElementById('prod-antigo').value,
         estoque: parseInt(document.getElementById('prod-estoque').value) || 0,
-        tamanhos: document.getElementById('prod-tamanhos').value, // <--- NOVA LINHA ADICIONADA
+        tamanhos: document.getElementById('prod-tamanhos').value,
         resumo: document.getElementById('prod-resumo').value,
         descricao: document.getElementById('prod-desc').value,
         galeria: galeriaAtual,
-        imagem: galeriaAtual[0],
+        imagem: galeriaAtual[0], // Capa é a primeira foto
     };
 
     try {
@@ -124,42 +140,75 @@ window.carregarProdutos = async () => {
     const container = document.getElementById('lista-produtos-admin');
     if (!container) return;
     container.innerHTML = '<p>Carregando inventário...</p>';
+    
     try {
         const q = query(collection(db, "produtos"), orderBy("dataCriacao", "desc"));
         const querySnapshot = await getDocs(q);
         container.innerHTML = '';
-        if (querySnapshot.empty) { container.innerHTML = '<p>Nenhum produto encontrado.</p>'; return; }
+        
+        if (querySnapshot.empty) { 
+            container.innerHTML = '<p>Nenhum produto encontrado.</p>'; 
+            return; 
+        }
+
         let total = 0, totalCliques = 0, totalEsgotados = 0;
+
         querySnapshot.forEach((docSnap) => {
             const p = docSnap.data();
             const isEsgotado = (p.estoque || 0) <= 0;
-            total++; totalCliques += (p.cliques || 0); if (isEsgotado) totalEsgotados++;
-            const badgeEstoque = isEsgotado ? `<span class="stock-badge-esgotado">ESGOTADO</span>` : `<span class="stock-badge">${p.estoque} unid.</span>`;
+            
+            total++; 
+            totalCliques += (p.cliques || 0); 
+            if (isEsgotado) totalEsgotados++;
+
+            const badgeEstoque = isEsgotado 
+                ? `<span class="stock-badge-esgotado">ESGOTADO</span>` 
+                : `<span class="stock-badge">${p.estoque} unid.</span>`;
+            
             const imgClass = isEsgotado ? "card-img card-img-esgotado" : "card-img";
             const imgCapa = (p.galeria && p.galeria[0]) || p.imagem || '../img/sem-foto.png';
+            
             const div = document.createElement('div');
             div.className = 'produto-card-admin';
+            
+            // O segredo está no estilo do card-actions abaixo:
             div.innerHTML = `
                 <div class="card-main-info">
                     <img src="${imgCapa}" class="${imgClass}" alt="${p.nome}">
                     <div class="card-text-info">
                         <h4 class="card-title">${p.nome}</h4>
                         <div class="card-price-stock">
-                            <strong class="card-price">${p.preco}</strong>
+                            <strong class="card-price">R$ ${p.preco}</strong>
                             ${badgeEstoque}
                         </div>
                     </div>
                 </div>
-                <div class="card-actions">
-                    <button onclick='window.editarProduto("${docSnap.id}", ${JSON.stringify(p).replace(/'/g, "&apos;")})' class="btn-acao-admin"><i class="fas fa-edit"></i></button>
-                    <button onclick='window.deletarProduto("${docSnap.id}")' class="btn-acao-admin btn-delete"><i class="fas fa-trash"></i></button>
-                </div>`;
+
+                <div class="card-actions" style="display: flex; gap: 8px; justify-content: center; margin-top: 15px; flex-wrap: wrap; padding: 5px;">
+                    <button onclick='window.editarProduto("${docSnap.id}", ${JSON.stringify(p).replace(/'/g, "&apos;")})' class="btn-acao-admin">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    
+                    <button onclick='window.gerarPostInsta("${p.nome}")' class="btn-acao-admin" style="background:#E1306C; color:white; border:none; width: 38px; height: 38px; border-radius: 8px; cursor: pointer;">
+                        <i class="fab fa-instagram"></i>
+                    </button>
+
+                    <button onclick='window.deletarProduto("${docSnap.id}")' class="btn-acao-admin btn-delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
             container.appendChild(div);
         });
+
+        // Atualiza os contadores do topo do painel
         if (document.getElementById('total-produtos')) document.getElementById('total-produtos').innerText = total;
         if (document.getElementById('total-views')) document.getElementById('total-views').innerText = totalCliques;
         if (document.getElementById('total-esgotados')) document.getElementById('total-esgotados').innerText = totalEsgotados;
-    } catch (e) { console.error(e); }
+
+    } catch (e) { 
+        console.error("Erro ao carregar produtos:", e); 
+    }
 }
 
 window.editarProduto = (id, p) => {
@@ -171,10 +220,7 @@ window.editarProduto = (id, p) => {
     document.getElementById('prod-preco').value = p.preco || "";
     document.getElementById('prod-antigo').value = p.precoAntigo || "";
     document.getElementById('prod-estoque').value = p.estoque || 0;
-    
-    // --- ATENÇÃO: Carregando os tamanhos para edição ---
     document.getElementById('prod-tamanhos').value = p.tamanhos || ""; 
-
     document.getElementById('prod-resumo').value = p.resumo || "";
     document.getElementById('prod-desc').value = p.descricao || "";
     document.getElementById('prod-categoria').value = p.categoria || "";
@@ -197,23 +243,34 @@ window.carregarBanners = async () => {
     }
 };
 
+// --- UPLOAD DE BANNERS TAMBÉM ATUALIZADO PARA CLOUDINARY ---
 window.uploadBannerFixo = async (slot) => {
     const input = document.getElementById(`input-banner-${slot}`);
     const status = document.getElementById(`status-${slot}`);
     if (input.files.length === 0) return;
+    
     const file = input.files[0];
-    status.innerText = "⏳ Enviando...";
+    status.innerText = "⏳ Enviando para Cloudinary...";
+    
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET); // Usa o mesmo preset
+
     try {
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { 
+            method: "POST", 
+            body: formData 
+        });
         const data = await res.json();
-        if (data.success) {
-            await setDoc(doc(db, "banners_fixos", `slot_${slot}`), { imagem: data.data.url, atualizadoEm: Date.now() });
-            document.getElementById(`img-preview-${slot}`).src = data.data.url;
+        
+        if (data.secure_url) {
+            await setDoc(doc(db, "banners_fixos", `slot_${slot}`), { imagem: data.data.secure_url, atualizadoEm: Date.now() });
+            document.getElementById(`img-preview-${slot}`).src = data.secure_url;
             status.innerText = "✅ Atualizado!";
+        } else {
+            status.innerText = "❌ Erro no Cloudinary";
         }
-    } catch (e) { status.innerText = "❌ Erro"; }
+    } catch (e) { status.innerText = "❌ Erro"; console.error(e); }
 };
 
 window.salvarCupomBanco = async () => {
@@ -278,8 +335,6 @@ window.fecharModal = () => {
     document.getElementById('modal-produto').style.display = 'none';
 };
 
-/* public/js/inventory.js - PARTE FINAL */
-
 onAuthStateChanged(auth, (user) => {
     if (!user) {
         window.location.href = "login.html";
@@ -312,6 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Carrega fretes se estiver na tela certa
+    const listaFretes = document.getElementById('lista-fretes-render');
+    if (listaFretes) window.carregarFretesBanco();
 });
 
 /* --- SISTEMA DE FRETE --- */
@@ -340,8 +399,6 @@ window.carregarFretesBanco = async () => {
     if (!lista) return;
     
     lista.innerHTML = "Carregando locais...";
-    
-    // Busca ordenando por valor (do mais barato pro mais caro)
     const q = query(collection(db, "locais_entrega"), orderBy("valor", "asc"));
     const snap = await getDocs(q);
     
@@ -368,18 +425,61 @@ window.deletarFreteBanco = async (id) => {
         window.carregarFretesBanco();
     }
 };
+// --- 🧠 CONFIGURAÇÃO GEMINI API DIRETA (INSTAGRAM) ---
+const GEMINI_API_KEY_ADMIN = "AIzaSyAx8tLLLnSL7CijSewZvSZzbtzng5Nk71g"; // Insira a sua chave do Google AI Studio
+const GEMINI_URL_ADMIN = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY_ADMIN}`;
 
-// Adicione esta linha no seu DOMContentLoaded ou onde você inicializa as outras coisas
-// para carregar a lista quando abrir a aba (ou a página)
-// window.carregarFretesBanco();
-/* --- GATILHO INICIAL (Isso que faltava) --- */
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // Verifica se estamos na tela que tem a lista de fretes
-    const listaContainer = document.getElementById('lista-fretes-render');
-    
-    if (listaContainer) {
-        console.log("Iniciando carregamento de fretes...");
-        window.carregarFretesBanco();
+window.gerarPostInsta = async (nomeProduto) => {
+    const aviso = document.createElement('div');
+    aviso.style = "position:fixed; top:20px; right:20px; background:#E1306C; color:white; padding:15px; border-radius:8px; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.2); font-family:sans-serif; font-weight:bold;";
+    aviso.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> A criar legenda para ${nomeProduto}...`;
+    document.body.appendChild(aviso);
+
+    try {
+        const prompt = `Atue como um Social Media focado em conversão para a loja JB Importes. Crie uma legenda chamativa, persuasiva e com emojis para o Instagram vendendo o produto: "${nomeProduto}". Use gatilhos mentais e não use formatação markdown como asteriscos, entregue apenas texto puro pronto para copiar.`;
+
+        const req = await fetch(GEMINI_URL_ADMIN, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const res = await req.json();
+        
+        if (!req.ok) throw new Error(res.error?.message || "Erro na API do Gemini");
+
+        const legenda = res.candidates[0].content.parts[0].text;
+
+        // --- SISTEMA DE CÓPIA À PROVA DE FALHAS (FALLBACK) ---
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(legenda);
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = legenda;
+            textArea.style.position = "fixed"; 
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Falha ao copiar texto:', err);
+            }
+            document.body.removeChild(textArea);
+        }
+        
+        aviso.style.background = "#10b981";
+        aviso.innerHTML = `<i class="fas fa-check"></i> Legenda copiada! Só colar no Insta.`;
+
+    } catch (e) {
+        aviso.style.background = "#ef4444";
+        aviso.innerHTML = `<i class="fas fa-times"></i> Erro: Verifique a Chave da API do Gemini!`;
+        console.error("Erro na integração:", e);
     }
-});
+    
+    setTimeout(() => aviso.remove(), 4000);
+};

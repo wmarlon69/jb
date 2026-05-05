@@ -2,6 +2,13 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "python311"
+    }
+  ],
   "hosting": {
     "target": "loja-nova",
     "public": "public",
@@ -32,7 +39,7 @@
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src * data: blob:; object-src 'none'; base-uri 'self';"
+            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.gstatic.com https://*.cloudfunctions.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src * data: blob:; object-src 'none'; base-uri 'self';"
           }
         ]
       }
@@ -41,6 +48,10 @@
       {
         "source": "/admin/**",
         "destination": "/admin/login.html"
+      },
+      {
+        "source": "/sentinel/**",
+        "function": "sentinel_cloud"
       },
       {
         "source": "**",

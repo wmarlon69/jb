@@ -375,3 +375,77 @@ main { flex: 1; }
     background: white;
     border-radius: 50%;
 }
+/* --- AJUSTE ESTILO SHOPEE (MOBILE) --- */
+@media (max-width: 768px) {
+    /* 1. Esconde a descrição (texto p) dentro do card apenas no celular */
+    .info-produto p,
+    .card-produto p {
+        display: none !important;
+    }
+
+    /* 2. Força o card a ter altura automática (tamanho do conteúdo) */
+    .card-produto {
+        height: auto !important;
+        min-height: 0 !important; /* Remove altura mínima se tiver */
+    }
+
+    /* 3. Ajusta o espaçamento interno para ficar mais compacto */
+    .info-produto {
+        padding: 10px !important;
+    }
+
+    /* 4. Diminui um pouco a fonte do título para não quebrar muito */
+    .info-produto h3 {
+        font-size: 0.9rem !important;
+        margin-bottom: 5px !important;
+        height: 40px; /* Mantém padrão de 2 linhas */
+        overflow: hidden;
+    }
+}
+/* --- ASSINATURA NO RODAPÉ --- */
+.footer-bottom {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dev-assinatura {
+    margin-top: 10px;
+}
+
+.dev-assinatura a {
+    font-size: 0.85rem;      /* Letra menorzinha */
+    color: #64748b;          /* Cinza discreto */
+    text-decoration: none;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+/* Efeito quando passa o mouse (Fica clicável e atrativo) */
+.dev-assinatura a:hover {
+    color: #fff;             /* Texto fica branco */
+    background: #ff5100;     /* Fundo Laranja da sua marca */
+    opacity: 1;
+    transform: translateY(-2px); /* Sobe um pouquinho */
+}
+
+.dev-assinatura span {
+    font-weight: 300;
+    opacity: 0.8;
+}
+.banner-container img {
+    width: 100%;
+    height: auto; /* Isso faz a altura seguir a largura proporcionalmente */
+    object-fit: contain; /* Garante que a imagem inteira apareça, sem cortes */
+}
+
+/* Ajuste específico para celular */
+@media (max-width: 768px) {
+    .banner-container {
+        height: 200px; /* Reduz a altura do "balde" onde a imagem fica no celular */
+    }
+}

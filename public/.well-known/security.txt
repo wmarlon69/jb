@@ -1,0 +1,16 @@
+# Contact: Como entrar em contato com você
+Contact: mailto:wm4346115@gmail.com
+Contact: https://meuportfoliomarlon.netlify.app/
+
+# Expires: Data em que este arquivo deve ser revisado (obrigatório pela RFC 9116)
+Expires: 2027-02-05T12:00:00z
+
+# Policy: Link para sua política de divulgação de vulnerabilidades (opcional)
+# (Linha comentada temporariamente até a página ser criada)
+# Policy: https://seu-portfolio.com/seguranca
+
+# Preferred-Languages: Idiomas que você prefere para os relatórios
+Preferred-Languages: pt-br, en
+
+# Hiring: Se você estiver buscando oportunidades ou parcerias
+Hiring: https://meuportfoliomarlon.netlify.app/

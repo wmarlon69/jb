@@ -8,7 +8,7 @@
 
     <title>JB Importes | Moda & Eletrônicos</title>
     
-    <link rel="icon" href="img/logo.joao.png" type="image/jpeg">
+    <link rel="icon" href="/public/img/favicon.ico" type="image/jpeg">
     <link rel="manifest" href="manifest.json">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,21 +19,123 @@
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/components.css">
     
-    <style>
-        .hero-slider-container { position: relative; width: 100%; height: 280px; overflow: hidden; border-radius: 20px; margin-bottom: 30px; }
-        .hero-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1s ease-in-out; display: flex; align-items: center; padding: 40px; }
+<style>
+        /* CSS BANNERS - VERSÃO "MOSTRAR TUDO" */
+        
+        .hero-slider-container { 
+            position: relative; 
+            width: 100%; 
+            /* No PC, mantemos o formato Widescreen (aprox. 3:1) */
+            padding-top: 35%; 
+            overflow: hidden; 
+            border-radius: 20px; 
+            margin-bottom: 30px; 
+            background-color: #000; 
+        }
+
+        .hero-slide { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            
+            /* CONFIGURAÇÃO PADRÃO (PC) */
+            background-size: cover; /* Cobre tudo no PC */
+            background-position: center; 
+            background-repeat: no-repeat;
+            
+            opacity: 0; 
+            transition: opacity 1s ease-in-out; 
+            display: flex; 
+            align-items: center; 
+            padding: 40px; 
+        }
+
         .hero-slide.active { opacity: 1; z-index: 2; }
-        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 100%); z-index: 1; }
-        .hero-content { position: relative; z-index: 3; color: white; max-width: 500px; animation: slideUp 0.8s ease; }
+        
+        .hero-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            /* Gradiente mais suave para não escurecer demais a arte do banner */
+            background: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 100%); 
+            z-index: 1; 
+        }
+        
+        .hero-content { 
+            position: relative; 
+            z-index: 3; 
+            color: white; 
+            max-width: 500px; 
+            animation: slideUp 0.8s ease; 
+            /* Sombra no texto para ler melhor em cima da imagem */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
         .hero-content h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 10px; }
-        .hero-content p { font-size: 1rem; margin-bottom: 20px; opacity: 0.9; }
-        .btn-hero { background: #ff5100; color: white; padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .hero-content p { font-size: 1rem; margin-bottom: 20px; opacity: 1; font-weight: 500; }
+        
+        .btn-hero { 
+            background: #ff5100; 
+            color: white; 
+            padding: 12px 25px; 
+            border-radius: 50px; 
+            text-decoration: none; 
+            font-weight: 700; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: 0.3s; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
         .btn-hero:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255, 81, 0, 0.4); }
+        
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
+        /* --- A MÁGICA PARA O CELULAR ACONTECE AQUI --- */
         @media(max-width: 768px) {
-            .hero-slider-container { height: 350px; border-radius: 0; margin-left: -20px; margin-right: -20px; width: auto; }
-            .hero-content h1 { font-size: 1.8rem; }
+            .hero-slider-container { 
+                /* Removemos o arredondamento no celular para ganhar espaço */
+                border-radius: 0; 
+                margin-left: -20px; /* Estica até a borda da tela */
+                margin-right: -20px;
+                width: calc(100% + 40px);
+                
+                /* Altura fixa menor para celular, para não ocupar a tela toda */
+                padding-top: 0;
+                height: 220px; 
+            }
+            
+            .hero-slide {
+                /* O SEGREDO: 'contain' força a imagem inteira a aparecer */
+                background-size: contain; 
+                background-position: center;
+                background-color: #1a1a1a; /* Cor de fundo se a imagem não preencher tudo */
+                padding: 20px;
+                align-items: flex-end; /* Joga o texto/botão para baixo para não tapar a imagem */
+            }
+            
+            .hero-overlay {
+                /* Deixa o overlay mais sutil no celular */
+                background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
+            }
+
+            .hero-content {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+
+            .hero-content h1 { font-size: 1.2rem; margin-bottom: 5px; display: none; /* Oculta título se o banner já tiver texto */ }
+            .hero-content p { font-size: 0.8rem; margin-bottom: 10px; display: none; /* Oculta descrição */ }
+            .btn-hero { 
+                padding: 8px 16px; 
+                font-size: 0.8rem; 
+                margin: 0 auto; /* Centraliza botão */
+            }
         }
     </style>
 </head>
@@ -68,6 +170,39 @@
             </div>
         </div>
     </nav>
+     
+<div class="container" style="margin-top: 20px;">
+    <div style="background: linear-gradient(135deg, #f6f8fd 0%, #f1f5f9 100%); border-radius: 16px; padding: 25px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h3 style="color: #1e293b; font-size: 1.5rem; margin-bottom: 5px; font-weight: 800;">
+                <i class="fas fa-robot" style="color: #6366f1;"></i> Personal Stylist IA
+            </h3>
+            <p style="color: #64748b; font-size: 0.95rem;">Não sabe o que vestir? Diga a ocasião e eu monto o look.</p>
+        </div>
+
+        <div style="display: flex; gap: 10px; max-width: 600px; margin: 0 auto; position: relative;">
+            <input type="text" id="input-stylist" placeholder="Ex: Churrasco com amigos, Roupa para encontro, Presente para namorada..." 
+                style="width: 100%; padding: 15px 20px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 1rem; outline: none; transition: 0.3s;">
+            
+            <button onclick="window.buscarLookIA()" 
+                style="background: #6366f1; color: white; border: none; padding: 0 25px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; white-space: nowrap;">
+                <i class="fas fa-magic"></i> <span class="btn-text-mobile">Criar Look</span>
+            </button>
+        </div>
+
+        <div id="resultado-stylist" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; border-left: 5px solid #6366f1; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+            </div>
+    </div>
+</div>
+
+<style>
+    /* Ajuste para celular: esconde o texto do botão se ficar apertado */
+    @media(max-width: 480px) {
+        .btn-text-mobile { display: none; }
+        #input-stylist { padding: 12px; font-size: 0.9rem; }
+    }
+</style>
 
     <main class="container">
       <section class="hero-slider-container">
@@ -134,8 +269,14 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 JB Importes.</p>
-        </div>
+    <p>&copy; 2026 JB Importes. Todos os direitos reservados.</p>
+    
+    <div class="dev-assinatura">
+        <a href="https://wa.me/5583996695516?text=Olá!%20Vi%20o%20site%20da%20JB%20Importes%20e%20tenho%20interesse%20em%20um%20sistema%20igual." target="_blank">
+            ⚡ Desenvolvido por <strong>WM Labs</strong> - <span>Quero um site desse</span>
+        </a>
+     </div>
+    </div>
     </footer>
 
     <div id="cart-float" class="cart-btn-float">
@@ -143,6 +284,7 @@
         <span id="cart-count" class="cart-badge">0</span>
     </div>
 
-    <script type="module" src="./js/main.js"></script>
+   <script type="module" src="./js/main.js"></script>
+<script type="module" src="./js/search.js"></script>
 </body>
 </html>

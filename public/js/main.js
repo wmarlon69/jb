@@ -12,7 +12,32 @@ const TEMPO_EXPIRACAO = 10 * 60 * 1000;
 let carrinho = JSON.parse(localStorage.getItem('cart_jb')) || [];
 let listaProdutosGlobal = [];
 let descontoAtivo = 0;
+let cupomCodigoAtivo = ""; // <--- ADICIONE ESSA LINHA AQUI
 
+// --- 🧠 CONFIGURAÇÃO GEMINI API DIRETA ---
+// Você gera essa chave de graça em: https://aistudio.google.com/
+const GEMINI_API_KEY = "AIzaSyAx8tLLLnSL7CijSewZvSZzbtzng5Nk71g"; 
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+// 🛡️ Função de Segurança (Substitui o Sentinel)
+async function analisarRiscoIA(mensagem) {
+    try {
+        const prompt = `Atue como um analista de fraudes. Leia este pedido de loja e responda APENAS com "🟢 Risco Baixo", "🟡 Risco Médio" ou "🔴 Risco Alto". Pedido: ${mensagem}`;
+        
+        const response = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text.trim();
+    } catch (e) {
+        console.error("Erro no Gemini:", e);
+        return "⚠️ Erro na análise";
+    }
+}
 // --- VARIÁVEIS DO FRETE ---
 let listaLocaisEntrega = []; 
 let entregaSelecionada = { id: 'retirada', nome: '📍 Retirada na Loja', valor: 0 };
@@ -573,28 +598,63 @@ async function aplicarCupom() {
     const input = document.getElementById('input-cupom');
     const msg = document.getElementById('msg-cupom');
     const codigo = input.value.trim().toUpperCase();
-    if (!codigo) { descontoAtivo = 0; salvarCarrinho(); return; }
+    
+    // Se estiver vazio, limpa tudo
+    if (!codigo) { 
+        descontoAtivo = 0; 
+        cupomCodigoAtivo = ""; 
+        salvarCarrinho(); 
+        return; 
+    }
+    
     try {
         const q = query(collection(db, "cupons"), where("codigo", "==", codigo));
         const snap = await getDocs(q);
+        
         if (!snap.empty) {
             const dados = snap.docs[0].data();
             descontoAtivo = dados.desconto;
+            cupomCodigoAtivo = codigo; // <--- AQUI ESTÁ O SEGREDO! SALVA O NOME.
             msg.innerHTML = `<span style="color:green">Cupom de ${(dados.desconto*100).toFixed(0)}% aplicado!</span>`;
         } else {
             descontoAtivo = 0;
+            cupomCodigoAtivo = ""; // Limpa se for inválido
             msg.innerHTML = `<span style="color:red">Cupom inválido.</span>`;
         }
     } catch (e) { console.error(e); }
+    
     salvarCarrinho();
 }
 
 async function enviarPedidoWhatsApp() {
-    if (carrinho.length === 0) return; 
+    // 1. Validação básica
+    if (carrinho.length === 0) {
+        alert("Seu carrinho está vazio!");
+        return; 
+    }
 
     const nomeCliente = prompt("Qual seu NOME?");
     if (!nomeCliente) return;
 
+    // --- O TRUQUE DO BLOQUEADOR (ANTI-POPUP) ---
+    const janelaZap = window.open('', '_blank');
+    
+    // Escrevemos uma mensagem bonita enquanto carrega
+    if (janelaZap) {
+        janelaZap.document.write(`
+            <html>
+                <head><title>Processando...</title></head>
+                <body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; background-color:#f8fafc; color:#334155;">
+                    <h2 style="margin-bottom:10px;">🚀 Quase lá, ${nomeCliente}!</h2>
+                    <p>Estamos salvando seu pedido e abrindo o WhatsApp...</p>
+                    <div style="margin-top:20px; width:40px; height:40px; border:4px solid #cbd5e1; border-top:4px solid #22c55e; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                    <style>@keyframes spin {0% {transform:rotate(0deg);} 100% {transform:rotate(360deg);}}</style>
+                </body>
+            </html>
+        `);
+    }
+
+    // 2. Monta o texto do WhatsApp
     let totalProdutos = 0;
     let texto = `*🛒 PEDIDO SITE - JB IMPORTES*\n*Cliente:* ${nomeCliente}\n`;
     
@@ -604,34 +664,76 @@ async function enviarPedidoWhatsApp() {
         const tamTxt = item.tamanho ? ` [Tam: ${item.tamanho}]` : '';
         texto += `▪️ ${item.qtd}x ${item.nome}${tamTxt}\n`;
     });
-    
-    const desc = totalProdutos * descontoAtivo;
+    // ... dentro da função enviarPedidoWhatsApp, onde você parou:
+    const valorDesconto = totalProdutos * descontoAtivo;
     const valorFrete = entregaSelecionada.valor;
-    const final = (totalProdutos - desc) + valorFrete;
+    const final = (totalProdutos - valorDesconto) + valorFrete;
 
-    texto += `\n📦 *Modo de Entrega:* ${entregaSelecionada.nome}`;
+    // --- 🛡️ PARTE 2: ADICIONE ESTAS LINHAS AQUI ---
+    const scoreIA = await analisarRiscoIA(texto); 
+
+    // Agora, dentro do seu try { await addDoc(...) }, adicione o campo:
+    try {
+        await addDoc(collection(db, "pedidos"), {
+            // ... outros campos ...
+            total: final,
+            sentinelScore: scoreIA, // <--- SALVA O VEREDITO DA IA AQUI
+            status: "pendente"
+        });
+    } catch (e) { console.error(e);
+        
+     }
+// ... resto da função (linkZap, etc)
+    // --- CORREÇÃO: LIMPAR NOME DA CIDADE ---
+    // Remove os emojis para ficar bonito no Admin e no Zap
+    let nomeEntregaLimpo = entregaSelecionada.nome.replace('🚚 ', '').replace('📍 ', '');
+
+    texto += `\n📦 *Modo de Entrega:* ${nomeEntregaLimpo}`;
     texto += `\n\n💵 Subtotal: R$ ${totalProdutos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    if (descontoAtivo > 0) texto += `\n🏷️ Desconto: - R$ ${desc.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    if (valorFrete > 0) texto += `\n🚚 Frete: R$ ${valorFrete.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    
+    if (descontoAtivo > 0) {
+        texto += `\n🏷️ Cupom (${cupomCodigoAtivo}): - R$ ${valorDesconto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    }
+    
+    if (valorFrete > 0) {
+        texto += `\n🚚 Frete: R$ ${valorFrete.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    }
+    
     texto += `\n\n*💰 TOTAL A PAGAR: R$ ${final.toLocaleString('pt-BR', {minimumFractionDigits: 2})}*`;
 
+    // 3. Tenta salvar no Firebase (Shadow Order)
     try {
         await addDoc(collection(db, "pedidos"), {
             data: Date.now(),
+            dataString: new Date().toLocaleString('pt-BR'), 
             clienteNome: nomeCliente,
-            clienteZap: "Via WhatsApp", 
-            endereco: "A combinar no WhatsApp",
-            tipoEntrega: entregaSelecionada.nome,
+            
+            // --- DADOS CORRIGIDOS PARA O ADMIN ---
+            tipoEntrega: nomeEntregaLimpo, // Salva "Centro" em vez de "🚚 Centro"
             valorFrete: valorFrete,
-            resumoItens: `${carrinho.length} itens (Carrinho)`, 
-            detalhesCarrinho: carrinho,
+            cupomNome: cupomCodigoAtivo,   // Salva "PROMO10"
+            valorDesconto: valorDesconto,  // Salva "15.00"
+            
+            origem: "Carrinho Finalizado",
+            resumoItens: `${carrinho.length} itens`,
             total: final, 
-            status: "pendente",
+            status: "pendente", 
+            detalhesCarrinho: carrinho, 
             zapVendedor: "5583996695516"
         });
-    } catch (e) { console.error("Erro carrinho:", e); }
+        console.log("Pedido salvo com sucesso!");
+    } catch (e) { 
+        console.error("Erro ao salvar pedido (Shadow Order):", e); 
+    }
 
-    window.open(`https://wa.me/5583996695516?text=${encodeURIComponent(texto)}`, '_blank');
+    // 4. Redireciona a janela que já estava aberta para o WhatsApp
+    const linkZap = `https://wa.me/5583996695516?text=${encodeURIComponent(texto)}`;
+
+    if (janelaZap) {
+        janelaZap.location.href = linkZap;
+    } else {
+        window.location.href = linkZap;
+    }
 }
 
 function normalizarTexto(t) { return String(t).normalize('NFD').replace(/[̀-ͯ]/g, "").toLowerCase(); }
@@ -742,3 +844,43 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Atualiza o carrinho visualmente (caso tenha itens salvos)
     atualizarCarrinhoUI();
 });
+
+// --- ✨ PERSONAL STYLIST GEMINI ---
+window.buscarLookIA = async () => {
+    const input = document.getElementById('input-stylist');
+    const resultadoDiv = document.getElementById('resultado-stylist');
+    const queryStr = input.value.trim();
+
+    if (!queryStr) return alert("Diga o look que você deseja!");
+
+    resultadoDiv.style.display = 'block';
+    resultadoDiv.innerHTML = `<p style="color:#6366f1;"><i class="fas fa-spinner fa-spin"></i> O Gemini está montando seu look...</p>`;
+
+    try {
+        // Pega só os nomes dos produtos para não pesar a requisição
+        const nomesProdutos = listaProdutosGlobal.map(p => p.nome).join(', ');
+        
+        const prompt = `Atue como um Personal Stylist da loja JB Importes. O cliente pediu: "${queryStr}". 
+        Temos estes produtos no estoque: ${nomesProdutos}. 
+        Crie uma sugestão de look curta, animada e direta usando os nossos produtos. Não use formatação markdown, apenas texto limpo.`;
+
+        const response = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const data = await response.json();
+        const respostaGemini = data.candidates[0].content.parts[0].text;
+
+        resultadoDiv.innerHTML = `
+            <h4 style="color:#6366f1;">✨ Sugestão do Gemini:</h4>
+            <p style="color:#475569; font-style:italic;">"${respostaGemini}"</p>
+        `;
+    } catch (e) {
+        console.error(e);
+        resultadoDiv.innerHTML = "❌ IA temporariamente offline.";
+    }
+};
