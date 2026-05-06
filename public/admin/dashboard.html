@@ -6,35 +6,366 @@
     <title>Painel Admin - JB Importes</title>
     <link rel="icon" href="/public/img/favicon.ico" type="image/jpeg">
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fontes Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <!-- Seus arquivos base -->
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/sales.css">
-</head>
-<body style="display: none;">
 
-    <div class="menu-overlay" onclick="toggleMenu()"></div>
-    <button class="btn-menu-mobile" onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-    </button>
+    <style>
+        /* =========================================
+           SISTEMA DE DESIGN INTEGRADO & POLIDO
+        ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <div class="dashboard-wrapper">
+        :root {
+            --bg: #0f0f13;
+            --bg2: #17171e;
+            --bg3: #1f1f29;
+            --border: rgba(255,255,255,0.07);
+            --border2: rgba(255,255,255,0.12);
+            --text: #f0eff5;
+            --muted: #888897;
+            --accent: #7c5cfc;
+            --accent-hover: #9175fc;
+            --accent2: #a87cff;
+            --green: #22d3a0;
+            --amber: #f59e0b;
+            --red: #f87171;
+            --blue: #60a5fa;
+            --sidebar-w: 260px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* SCROLLBAR CUSTOMIZADA */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh; 
+            font-size: 14px; 
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
+
+        .layout { display: flex; height: 100vh; width: 100vw; }
+
+        /* ================= MENU MOBILE ================= */
+        .btn-menu-mobile {
+            display: none;
+            background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer;
+            padding: 8px; border-radius: 8px; transition: background 0.2s;
+        }
+        .btn-menu-mobile:hover { background: var(--bg3); }
         
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>JB<span>Painel</span></h2>
+        .menu-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90;
+            opacity: 0; visibility: hidden; transition: 0.3s ease; backdrop-filter: blur(2px);
+        }
+        .menu-overlay.ativo { opacity: 1; visibility: visible; }
+
+        /* ================= SIDEBAR ================= */
+        .sidebar { 
+            width: var(--sidebar-w); background: var(--bg2); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; flex-shrink: 0; z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-logo .brand { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+        .sidebar-logo .brand span { color: var(--accent2); }
+        .sidebar-logo .sub { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; font-weight: 600; }
+
+        .sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
+        .nav-section { padding: 16px 14px 8px; font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+        
+        .btn-menu-admin { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 4px 0; 
+            border-radius: 10px; cursor: pointer; font-size: 14px; color: var(--muted); 
+            transition: all 0.2s ease; border: 1px solid transparent; background: transparent; 
+            width: 100%; text-align: left; font-family: 'DM Sans', sans-serif; font-weight: 500; 
+            position: relative;
+        }
+        .btn-menu-admin:hover { background: var(--bg3); color: var(--text); transform: translateX(4px); }
+        .btn-menu-admin.ativo { 
+            background: linear-gradient(135deg, rgba(124,92,252,0.15), rgba(168,124,255,0.05)); 
+            color: var(--accent2); border-color: rgba(124,92,252,0.2); font-weight: 600;
+        }
+        .btn-menu-admin i { width: 20px; font-size: 16px; text-align: center; }
+        
+        .nav-badge { margin-left: auto; background: var(--red); color: white; font-size: 10px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
+        .nav-badge.green { background: var(--green); color: #0a1a14; }
+
+        .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); background: var(--bg2); }
+        .user-card { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px; transition: background 0.2s; cursor: default; }
+        .user-card:hover { background: var(--bg3); }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg3); outline: 2px solid var(--accent); }
+        .user-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .user-role { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+        /* ================= MAIN CONTENT & TOPBAR ================= */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        .topbar { 
+            height: 70px; background: rgba(23, 23, 30, 0.8); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border); display: flex; align-items: center; 
+            padding: 0 24px; gap: 16px; flex-shrink: 0; justify-content: space-between; z-index: 10;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); }
+        
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        
+        .search-bar { 
+            display: flex; align-items: center; gap: 10px; background: var(--bg3); 
+            border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; width: 250px; 
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,252,0.15); }
+        .search-bar input { background: none; border: none; outline: none; color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; width: 100%; }
+        .search-bar input::placeholder { color: var(--muted); }
+        .search-bar i { color: var(--muted); font-size: 14px; }
+
+        .notif-btn {
+            width: 40px; height: 40px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; color: var(--muted); font-size: 16px; transition: 0.2s;
+        }
+        .notif-btn:hover { background: var(--bg2); color: var(--text); }
+        .notif-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid var(--bg3); }
+
+        .content { flex: 1; overflow-y: auto; padding: 32px; scroll-behavior: smooth; }
+
+        /* ================= SEÇÕES & CARDS ================= */
+        .secao-admin { display: none; animation: fadeIn 0.4s ease forwards; }
+        .secao-admin.ativa { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .section-header h2 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); }
+
+        .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+        .metric { 
+            background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; 
+            padding: 24px; position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border2); }
+        .metric::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+        .metric.m-purple::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+        .metric.m-green::before { background: var(--green); }
+        .metric.m-amber::before { background: var(--amber); }
+        .metric.m-blue::before { background: var(--blue); }
+        .metric.m-red::before { background: var(--red); }
+        
+        .metric-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 12px; }
+        .metric-value { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 6px; }
+        .metric-change { font-size: 12px; }
+        .metric-change.up { color: var(--green); }
+        .metric-change.down { color: var(--red); }
+        .metric-icon { position: absolute; top: 20px; right: 20px; font-size: 24px; opacity: 0.1; }
+
+        /* ================= COMPONENTES (BOTÕES & FORMS) ================= */
+        .btn { 
+            padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; 
+            cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; 
+            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; 
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(124,92,252,0.25); }
+        .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 6px 16px rgba(124,92,252,0.35); }
+        .btn-ghost { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--border); border-color: var(--border2); }
+        .btn-danger { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+        .btn-danger:hover { background: rgba(248,113,113,0.2); }
+        .btn-success { background: rgba(34,211,160,0.15); color: var(--green); border: 1px solid rgba(34,211,160,0.25); }
+
+        .admin-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label, .form-group label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px; }
+        
+        .form-input, .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; background: var(--bg3); border: 1px solid var(--border); 
+            border-radius: 10px; padding: 12px 16px; color: var(--text); font-size: 14px; 
+            font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s ease; 
+        }
+        .form-input:focus, .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+            border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 4px rgba(124,92,252,0.1); 
+        }
+        .form-group select option { background: var(--bg2); }
+
+        /* ================= GRÁFICOS & TABELAS ================= */
+        .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+        .chart-card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+        .chart-card-title .pill { font-size: 11px; background: rgba(124,92,252,0.15); color: var(--accent2); padding: 4px 10px; border-radius: 20px; font-family: 'DM Sans', sans-serif; font-weight: 600; border: 1px solid rgba(124,92,252,0.25); }
+
+        .table-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+        .table-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .table-header h3 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 14px 24px; text-align: left; font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+        td { padding: 16px 24px; font-size: 14px; color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.03); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bg3); }
+        .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-pill.green { background: rgba(34,211,160,0.12); color: var(--green); border: 1px solid rgba(34,211,160,0.2); }
+        .status-pill.amber { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+        .status-pill.red { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+        .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+        /* ================= VENDAS & FILTROS ================= */
+        .filtros-venda { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+        .btn-filtro { 
+            padding: 10px 18px; border: 1px solid transparent; border-radius: 10px; font-weight: 600; 
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; 
+            font-family: 'DM Sans', sans-serif; font-size: 13px;
+        }
+        #filtro-pendente { background: rgba(245,158,11,0.1); color: var(--amber); border-color: rgba(245,158,11,0.2); }
+        #filtro-pendente:hover { background: rgba(245,158,11,0.2); }
+        #filtro-pago { background: rgba(34,211,160,0.1); color: var(--green); border-color: rgba(34,211,160,0.2); }
+        #filtro-pago:hover { background: rgba(34,211,160,0.2); }
+
+        /* ================= OUTRAS SEÇÕES ================= */
+        .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .lista-pedidos-container, .lista-cupons { margin-top: 24px; }
+
+        .banners-grid-fixa { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .banner-slot { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; transition: 0.2s; }
+        .banner-slot:hover { border-color: var(--border2); }
+        .banner-slot h3 { font-family: 'Syne', sans-serif; font-size: 16px; margin-bottom: 16px; color: var(--text); }
+        .banner-slot img { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin-bottom: 16px; background: var(--bg3); border: 1px solid var(--border); }
+        
+        .bloco-notas-admin textarea { height: 450px; resize: vertical; line-height: 1.6; }
+
+        /* ================= NOTIFICAÇÕES & TOAST ================= */
+        .notif-panel {
+            position: absolute; top: 60px; right: 24px; width: 340px;
+            background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
+            z-index: 100; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            display: none; transform-origin: top right;
+        }
+        .notif-panel.open { display: block; animation: scaleIn 0.2s ease; }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .notif-panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .notif-panel-header span { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+        .mark-all { font-size: 12px; color: var(--accent2); cursor: pointer; background: none; border: none; font-family: 'DM Sans'; font-weight: 600; }
+        .notif-item { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; cursor: pointer; transition: background 0.2s; }
+        .notif-item:hover { background: var(--bg3); }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-dot2 { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+        .notif-item-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+        .notif-item-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        .toast { 
+            position: fixed; bottom: 24px; right: 24px; background: var(--bg2); 
+            border: 1px solid var(--green); border-radius: 12px; padding: 14px 20px; 
+            display: flex; align-items: center; gap: 12px; z-index: 1100; 
+            opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast-icon { color: var(--green); font-size: 18px; }
+        .toast-text { font-size: 14px; color: var(--text); font-weight: 500; }
+
+        /* ================= MODAL ================= */
+        .modal-admin { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); 
+            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; 
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-admin.open { display: flex; opacity: 1; }
+        .modal-content { 
+            background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; 
+            padding: 32px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; 
+            position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-admin.open .modal-content { transform: scale(1); }
+        
+        .close { 
+            position: absolute; top: 24px; right: 24px; width: 32px; height: 32px; 
+            display: flex; align-items: center; justify-content: center; border-radius: 8px;
+            font-size: 20px; color: var(--muted); cursor: pointer; transition: 0.2s; background: var(--bg3);
+        }
+        .close:hover { color: var(--text); background: var(--border); }
+        #titulo-modal { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--text); }
+
+        /* ================= MEDIA QUERIES (RESPONSIVIDADE) ================= */
+        @media (max-width: 1024px) {
+            .metrics-row { grid-template-columns: repeat(2, 1fr); }
+            .banners-grid-fixa { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; height: 100vh; transform: translateX(-100%); box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
+            .sidebar.open { transform: translateX(0); }
+            .btn-menu-mobile { display: block; }
+            
+            .topbar { padding: 0 16px; }
+            .search-bar { display: none; }
+            
+            .content { padding: 20px 16px; }
+            .metrics-row { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+            .form-row { grid-template-columns: 1fr; gap: 0; }
+            
+            .section-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .section-header .btn { width: 100%; }
+            
+            .banners-grid-fixa { grid-template-columns: 1fr; }
+            .filtros-venda { flex-direction: column; }
+            .filtros-venda .btn-filtro { width: 100%; justify-content: center; margin-left: 0 !important; }
+            
+            .modal-content { padding: 20px; margin: 10px; width: calc(100% - 20px); }
+            .notif-panel { width: calc(100vw - 32px); right: 16px; top: 65px; }
+        }
+    </style>
+</head>
+<body style="display: none;"> <!-- Mantido para evitar FOUC -->
+
+    <div class="layout">
+        
+        <!-- OVERLAY MENU MOBILE -->
+        <div class="menu-overlay" id="menu-overlay" onclick="toggleMenu()"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="brand">JB<span>Importes</span></div>
+                <button class="btn-menu-mobile" onclick="toggleMenu()" style="display: none;" id="btn-close-sidebar">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <nav class="sidebar-nav">
-                <button class="btn-menu-admin ativo" onclick="alternarAba('produtos', this)">
+                <div class="nav-section">Principal</div>
+                <button class="btn-menu-admin ativo" onclick="alternarAba('dashboard', this)">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </button>
+                <button class="btn-menu-admin" onclick="alternarAba('produtos', this)">
                     <i class="fas fa-box"></i> Produtos
                 </button>
-                
-              <button class="btn-menu-admin" onclick="alternarAba('vendas', this); if(window.carregarPedidos) window.carregarPedidos()" id="btn-menu-vendas">
-    <i class="fas fa-shopping-cart"></i> Gestão de Vendas
-</button>
+                <button class="btn-menu-admin" onclick="alternarAba('vendas', this); if(window.carregarPedidos) window.carregarPedidos()" id="btn-menu-vendas">
+                    <i class="fas fa-shopping-cart"></i> Pedidos
+                </button>
 
+                <div class="nav-section">Loja & Ferramentas</div>
+                <button class="btn-menu-admin" onclick="alternarAba('logistica', this)">
+                    <i class="fas fa-truck"></i> Logística (Frete)
+                </button>
                 <button class="btn-menu-admin" onclick="alternarAba('cupons', this)">
                     <i class="fas fa-ticket-alt"></i> Cupons
                 </button>
@@ -42,214 +373,340 @@
                     <i class="fas fa-images"></i> Banners (Site)
                 </button>
                 <button class="btn-menu-admin" onclick="alternarAba('notas', this)">
-                    <i class="fas fa-sticky-note"></i> Bloco de Notas
+                    <i class="fas fa-sticky-note"></i> Notas
                 </button>
-                <button class="btn-menu-admin" onclick="alternarAba('logistica', this)">
-    <i class="fas fa-truck"></i> Logística (Frete)
-</button>
 
-                <a href="../index.html" target="_blank">
-                    <i class="fas fa-eye"></i> Ver Vitrine
+                <div class="nav-section">Sistema</div>
+                <a href="../index.html" target="_blank" class="btn-menu-admin" style="text-decoration:none;">
+                    <i class="fas fa-external-link-alt"></i> Ver Vitrine
                 </a>
-
-                <button class="logout-btn" id="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
             </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <img src="../img/logo.joao.png" alt="Admin" class="avatar" onerror="this.src='https://ui-avatars.com/api/?name=JB&background=7c5cfc&color=fff'">
+                    <div>
+                        <div class="user-name">João Bezerra</div>
+                        <div class="user-role">Administrador</div>
+                    </div>
+                </div>
+                <button class="btn-menu-admin btn-danger" id="btn-logout" style="margin-top: 12px; justify-content: center; width: 100%;">
+                    <i class="fas fa-sign-out-alt"></i> Sair do Painel
+                </button>
+            </div>
         </aside>
 
+        <!-- MAIN -->
         <main class="main-content">
             
-            <header class="top-bar">
-                <div class="search-admin" id="search-container">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="input-busca" placeholder="Buscar produto...">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-mobile" onclick="toggleMenu()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="topbar-title" id="page-title">Dashboard</div>
                 </div>
-                <div class="user-profile">
-                    <img src="../img/logo.joao.png" alt="Admin">
+                
+                <div class="topbar-right">
+                    <div class="search-bar" id="search-container" style="display:none;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="input-busca" placeholder="Buscar produto...">
+                    </div>
+                    
+                    <div class="notif-btn" onclick="toggleNotif()" id="notif-btn">
+                        <i class="far fa-bell"></i>
+                        <span class="notif-dot" id="notif-dot" style="display:none;"></span>
+                    </div>
+
+                    <!-- Botão Adicionar -->
+                    <button class="btn btn-primary" onclick="window.abrirModal()" style="padding: 10px 16px;">
+                        <i class="fas fa-plus"></i> <span class="txt-btn-add">Novo Produto</span>
+                    </button>
                 </div>
             </header>
 
-            <section id="sec-produtos" class="secao-admin ativa">
-                <div class="stats-cards">
-                    <div class="card-stat">
-                        <h3>Total Produtos</h3>
-                        <p id="total-produtos">0</p>
-                    </div>
-                    <div class="card-stat">
-                        <h3>Total Cliques</h3>
-                        <p id="total-views" class="stat-cliques">0</p>
-                    </div>
-                    <div class="card-stat">
-                        <h3>Esgotados</h3>
-                        <p id="total-esgotados" class="stat-esgotados">0</p>
-                    </div>
+            <!-- PAINEL DE NOTIFICAÇÕES -->
+            <div class="notif-panel" id="notif-panel">
+                <div class="notif-panel-header">
+                    <span>Notificações</span>
+                    <button class="mark-all" onclick="markAll()">Marcar lidas</button>
                 </div>
+                <div class="notif-item" style="justify-content:center; color:var(--muted); padding:20px;">
+                    Nenhuma nova notificação
+                </div>
+            </div>
 
-                <div class="section-header">
-                    <h2>Inventário</h2>
-                    <button class="btn-add" onclick="window.abrirModal()">
-                        <i class="fas fa-plus"></i> Novo Produto
-                    </button>
-                </div>
+            <div class="content">
 
-                <div class="admin-grid-produtos" id="lista-produtos-admin">
-                    <p>Carregando produtos...</p>
-                </div>
-            </section>
-            <section id="sec-vendas" class="secao-admin">
-                
-                <div class="vendas-header" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
-                    <h2 style="margin-bottom: 15px;">Gestão de Pedidos</h2>
+                <!-- ================= ABA 0: DASHBOARD PRINCIPAL (Dados Reais) ================= -->
+                <section id="sec-dashboard" class="secao-admin ativa">
+                    <div class="metrics-row">
+                        <div class="metric m-purple">
+                            <i class="fas fa-wallet metric-icon"></i>
+                            <div class="metric-label">Receita (Vendas Pagas)</div>
+                            <div class="metric-value" id="dash-receita">R$ 0,00</div>
+                        </div>
+                        <div class="metric m-green">
+                            <i class="fas fa-shopping-bag metric-icon"></i>
+                            <div class="metric-label">Pedidos Concluídos</div>
+                            <div class="metric-value" id="dash-pedidos">0</div>
+                        </div>
+                        <div class="metric m-amber">
+                            <i class="fas fa-users metric-icon"></i>
+                            <div class="metric-label">Clientes Diferentes</div>
+                            <div class="metric-value" id="dash-clientes">0</div>
+                        </div>
+                        <div class="metric m-blue">
+                            <i class="fas fa-star metric-icon"></i>
+                            <div class="metric-label">Avaliação do Site</div>
+                            <div class="metric-value">4,9 <span style="font-size: 14px;">★</span></div>
+                        </div>
+                    </div>
+
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <div class="chart-card-title">
+                                Histórico de Vendas
+                                <span class="pill">Tempo Real</span>
+                            </div>
+                            <div style="position: relative; height: 250px;">
+                                <canvas id="chart-vendas"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-title">Vendas por Categoria</div>
+                            <div style="position: relative; height: 200px;">
+                                <canvas id="chart-cats"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Últimos Pedidos Registrados</h3>
+                            <button class="btn btn-ghost" onclick="alternarAba('vendas')">Ver Todos</button>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Status</th>
+                                        <th>Itens</th>
+                                        <th>Total</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-ultimos-pedidos">
+                                    <tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Carregando pedidos...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================= ABA 1: PRODUTOS ================= -->
+                <section id="sec-produtos" class="secao-admin">
+                    <div class="metrics-row" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="metric m-purple">
+                            <div class="metric-label">Total Produtos (Catálogo)</div>
+                            <div class="metric-value" id="total-produtos">0</div>
+                        </div>
+                        <div class="metric m-green">
+                            <div class="metric-label">Visualizações Globais</div>
+                            <div class="metric-value" id="total-views">0</div>
+                        </div>
+                        <div class="metric m-red">
+                            <div class="metric-label">Itens Esgotados</div>
+                            <div class="metric-value" id="total-esgotados">0</div>
+                        </div>
+                    </div>
+
+                    <div class="section-header">
+                        <h2>Inventário de Produtos</h2>
+                    </div>
+
+                    <div class="prod-grid" id="lista-produtos-admin">
+                        <p style="color: var(--muted); grid-column:1/-1; text-align:center;">Carregando inventário...</p>
+                    </div>
+                </section>
+
+                <!-- ================= ABA 2: VENDAS ================= -->
+                <section id="sec-vendas" class="secao-admin">
+                    <div class="section-header">
+                        <h2>Gestão de Pedidos</h2>
+                    </div>
                     
-                    <div class="filtros-venda" style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button onclick="window.filtrarPedidos('pendente')" class="btn-filtro" id="filtro-pendente" 
-                            style="padding:10px 20px; border:none; border-radius:20px; background:#f1c40f; color:#fff; font-weight:bold; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <div class="filtros-venda">
+                        <button onclick="window.filtrarPedidos('pendente')" class="btn-filtro" id="filtro-pendente">
                             <i class="far fa-clock"></i> A Receber
                         </button>
-                        
-                        <button onclick="window.filtrarPedidos('pago')" class="btn-filtro" id="filtro-pago" 
-                            style="padding:10px 20px; border:none; border-radius:20px; background:#e0e0e0; color:#555; font-weight:bold; cursor:pointer;">
+                        <button onclick="window.filtrarPedidos('pago')" class="btn-filtro" id="filtro-pago">
                             <i class="fas fa-check-double"></i> Concluídos
                         </button>
-            
-                        <button onclick="window.mostrarResumoMensal()" class="btn-filtro" 
-                            style="padding:10px 20px; border:none; border-radius:20px; background:#3498db; color:#fff; font-weight:bold; cursor:pointer; margin-left:auto;">
-                            <i class="fas fa-chart-line"></i> Fechamento Mensal
+                        <button onclick="window.mostrarResumoMensal()" class="btn-filtro btn-ghost" style="margin-left: auto;">
+                            <i class="fas fa-chart-line"></i> Fechamento
                         </button>
                     </div>
-                </div>
-            
-                <div class="lista-pedidos-container" id="lista-pedidos-render">
-                    <p style="text-align:center; color:#888;">Carregando pedidos...</p>
-                </div>
-            
-                <div id="painel-mensal" style="display:none; background:#f8f9fa; padding:30px; border-radius:10px; margin-top:20px; border:1px solid #ddd; text-align:center;">
-                    <h3 style="color:#333; margin-bottom:20px;">💰 Fechamento deste Mês</h3>
-                    
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; max-width:600px; margin:0 auto;">
-                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                            <p style="color:#666; font-size:0.9rem;">Total Vendido (Pago)</p>
-                            <strong id="total-mes-valor" style="font-size:1.8rem; color:#27ae60;">R$ 0,00</strong>
+                
+                    <div class="lista-pedidos-container" id="lista-pedidos-render">
+                        <p style="text-align:center; color: var(--muted); padding: 40px;">Carregando pedidos...</p>
+                    </div>
+                
+                    <!-- Painel Fechamento -->
+                    <div id="painel-mensal" style="display:none; background: var(--bg2); padding: 40px; border-radius: 16px; border: 1px solid var(--border); text-align: center; margin-top: 24px;">
+                        <h3 style="color:var(--text); margin-bottom:32px; font-family: 'Syne', sans-serif; font-size: 24px;">💰 Fechamento Atual do Caixa</h3>
+                        
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:24px; max-width:700px; margin:0 auto;">
+                            <div style="background:var(--bg3); padding:32px 20px; border-radius:12px; border:1px solid var(--border); box-shadow: var(--shadow-sm);">
+                                <p style="color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Faturamento Bruto</p>
+                                <strong id="total-mes-valor" style="font-size:36px; color:var(--green); font-family:'Syne', sans-serif; display:block; margin-top:12px;">R$ 0,00</strong>
+                            </div>
+                            <div style="background:var(--bg3); padding:32px 20px; border-radius:12px; border:1px solid var(--border); box-shadow: var(--shadow-sm);">
+                                <p style="color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Itens Baixados</p>
+                                <strong id="total-mes-qtd" style="font-size:36px; color:var(--text); font-family:'Syne', sans-serif; display:block; margin-top:12px;">0 unid.</strong>
+                            </div>
                         </div>
-                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                            <p style="color:#666; font-size:0.9rem;">Pedidos Finalizados</p>
-                            <strong id="total-mes-qtd" style="font-size:1.8rem; color:#333;">0</strong>
+
+                        <div style="margin-top:32px; padding:24px; background:rgba(245,158,11,0.1); border-radius:12px; border:1px solid rgba(245,158,11,0.2);">
+                            <p style="color:var(--amber); font-size:14px; margin-bottom:16px; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i> 
+                                Ao fechar o caixa, todas as vendas "Concluídas" acima serão arquivadas para o histórico.
+                            </p>
+                            <button class="btn btn-danger" onclick="window.zerarFechamento()" style="background:rgba(248,113,113,0.15); color:var(--red); border-color:var(--red); font-size: 15px;">
+                                <i class="fas fa-archive"></i> Arquivar Vendas e Zerar Caixa
+                            </button>
+                        </div>
+                
+                        <hr style="margin:40px 0; border:0; border-top:1px solid var(--border);">
+                        <button class="btn btn-ghost" onclick="window.filtrarPedidos('pendente')">
+                            <i class="fas fa-arrow-left"></i> Voltar para Lista
+                        </button>
+                    </div>
+                </section>
+
+                <!-- ================= ABA 3: CUPONS ================= -->
+                <section id="sec-cupons" class="secao-admin">
+                    <div class="section-header">
+                        <h2>Gerenciar Descontos</h2>
+                    </div>
+                    <div class="admin-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="codigo-cupom">Código do Cupom</label>
+                                <input type="text" id="codigo-cupom" placeholder="Ex: CLIENTEVIP">
+                            </div>
+                            <div class="form-group">
+                                <label for="porcentagem-cupom">Desconto (%)</label>
+                                <input type="number" id="porcentagem-cupom" placeholder="Ex: 10">
+                            </div>
+                        </div>
+                        <button onclick="window.salvarCupomBanco()" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Gerar Cupom
+                        </button>
+                    </div>
+                    <h3 style="margin-bottom:20px; margin-top:32px; font-family:'Syne', sans-serif; font-size: 18px; color: var(--text);">Cupons Ativos</h3>
+                    <div id="lista-cupons-render"></div>
+                </section>
+
+                <!-- ================= ABA 4: BANNERS ================= -->
+                <section id="sec-banners" class="secao-admin">
+                    <div class="section-header">
+                        <h2>Gestão de Banners (Vitrine Principal)</h2>
+                    </div>
+                    <div class="banners-grid-fixa">
+                        <!-- BANNER 1 -->
+                        <div class="banner-slot">
+                            <h3>Banner 1</h3>
+                            <img id="img-preview-1" src="../img/sem-foto.png" alt="Preview Banner 1">
+                            <input type="file" id="input-banner-1" hidden onchange="window.uploadBannerFixo(1)">
+                            <button onclick="document.getElementById('input-banner-1').click()" class="btn btn-ghost" style="width:100%;">
+                                <i class="fas fa-image"></i> Alterar Imagem
+                            </button>
+                            <p id="status-1" style="font-size: 12px; color: var(--green); margin-top: 10px; font-weight: 600;"></p>
+                        </div>
+                        <!-- BANNER 2 -->
+                        <div class="banner-slot">
+                            <h3>Banner 2</h3>
+                            <img id="img-preview-2" src="../img/sem-foto.png" alt="Preview Banner 2">
+                            <input type="file" id="input-banner-2" hidden onchange="window.uploadBannerFixo(2)">
+                            <button onclick="document.getElementById('input-banner-2').click()" class="btn btn-ghost" style="width:100%;">
+                                <i class="fas fa-image"></i> Alterar Imagem
+                            </button>
+                            <p id="status-2" style="font-size: 12px; color: var(--green); margin-top: 10px; font-weight: 600;"></p>
+                        </div>
+                        <!-- BANNER 3 -->
+                        <div class="banner-slot">
+                            <h3>Banner 3</h3>
+                            <img id="img-preview-3" src="../img/sem-foto.png" alt="Preview Banner 3">
+                            <input type="file" id="input-banner-3" hidden onchange="window.uploadBannerFixo(3)">
+                            <button onclick="document.getElementById('input-banner-3').click()" class="btn btn-ghost" style="width:100%;">
+                                <i class="fas fa-image"></i> Alterar Imagem
+                            </button>
+                            <p id="status-3" style="font-size: 12px; color: var(--green); margin-top: 10px; font-weight: 600;"></p>
                         </div>
                     </div>
-            
-                    <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
-                    <button onclick="window.filtrarPedidos('pendente')" style="padding:10px 25px; cursor:pointer; background:#333; color:white; border:none; border-radius:5px;">
-                        Voltar para Pedidos
-                    </button>
-                </div>
-            </section>
+                </section>
 
-            <section id="sec-cupons" class="secao-admin">
-                <div class="section-header">
-                    <h2>Gerenciar Descontos</h2>
-                </div>
-                <div class="admin-section">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="codigo-cupom">Código do Cupom</label>
-                            <input type="text" id="codigo-cupom" placeholder="Ex: CLIENTEVIP">
+                <!-- ================= ABA 5: LOGÍSTICA (FRETE) ================= -->
+                <section id="sec-logistica" class="secao-admin">
+                    <div class="section-header">
+                        <h2>Gerenciar Locais de Entrega</h2>
+                    </div>
+                    <div class="admin-section">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="nome-cidade">Nome da Cidade / Bairro</label>
+                                <input type="text" id="nome-cidade" placeholder="Ex: Centro, Interior, etc.">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="valor-frete">Valor do Frete (R$)</label>
+                                <input type="number" id="valor-frete" placeholder="Ex: 15.00">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="porcentagem-cupom">Desconto (%)</label>
-                            <input type="number" id="porcentagem-cupom" placeholder="Ex: 10">
-                        </div>
+                        <button onclick="window.salvarFreteBanco()" class="btn btn-primary" style="background: var(--blue);">
+                            <i class="fas fa-plus-circle"></i> Adicionar Rota
+                        </button>
                     </div>
-                    <button onclick="window.salvarCupomBanco()" class="btn-cupom">
-                        <i class="fas fa-check"></i> Criar Cupom
-                    </button>
-                </div>
-                <h3 style="margin-bottom:15px; margin-top:30px;">Cupons Ativos</h3>
-                <div class="lista-cupons" id="lista-cupons-render"></div>
-            </section>
+                    <h3 style="margin-bottom:20px; margin-top:32px; font-family:'Syne', sans-serif; font-size: 18px; color: var(--text);">Tabela de Fretes</h3>
+                    <div id="lista-fretes-render"></div>
+                </section>
 
-            <section id="sec-banners" class="secao-admin">
-                <div class="section-header">
-                    <h2>Gestão de Banners (Vitrine)</h2>
-                </div>
-                <div class="banners-grid-fixa">
-                    <div class="banner-slot">
-                        <h3>Banner 1</h3>
-                        <img id="img-preview-1" src="../img/sem-foto.png" alt="Preview Banner 1">
-                        <input type="file" id="input-banner-1" hidden onchange="window.uploadBannerFixo(1)">
-                        <button onclick="document.getElementById('input-banner-1').click()" class="btn-trocar-banner">Trocar</button>
-                        <p id="status-1" class="status-upload"></p>
+                <!-- ================= ABA 6: BLOCO DE NOTAS ================= -->
+                <section id="sec-notas" class="secao-admin">
+                    <div class="section-header">
+                        <h2>Bloco de Notas</h2>
                     </div>
-                    <div class="banner-slot">
-                        <h3>Banner 2</h3>
-                        <img id="img-preview-2" src="../img/sem-foto.png" alt="Preview Banner 2">
-                        <input type="file" id="input-banner-2" hidden onchange="window.uploadBannerFixo(2)">
-                        <button onclick="document.getElementById('input-banner-2').click()" class="btn-trocar-banner">Trocar</button>
-                        <p id="status-2" class="status-upload"></p>
+                    <div class="bloco-notas-admin form-group">
+                        <textarea id="meu-rascunho" class="form-input" placeholder="Espaço livre para ideias, pendências com fornecedores... (Fica salvo no seu navegador)"></textarea>
                     </div>
-                    <div class="banner-slot">
-                        <h3>Banner 3</h3>
-                        <img id="img-preview-3" src="../img/sem-foto.png" alt="Preview Banner 3">
-                        <input type="file" id="input-banner-3" hidden onchange="window.uploadBannerFixo(3)">
-                        <button onclick="document.getElementById('input-banner-3').click()" class="btn-trocar-banner">Trocar</button>
-                        <p id="status-3" class="status-upload"></p>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <section id="sec-notas" class="secao-admin">
-                <div class="section-header">
-                    <h2>Bloco de Notas</h2>
-                </div>
-                <div class="bloco-notas-admin">
-                    <textarea id="meu-rascunho" placeholder="Suas anotações aqui..."></textarea>
-                </div>
-            </section>
-
-            <section id="sec-logistica" class="secao-admin">
-    <div class="section-header">
-        <h2>Gerenciar Locais de Entrega</h2>
-    </div>
-    
-    <div class="admin-section">
-        <div class="form-row">
-            <div class="form-group" style="flex: 2;">
-                <label for="nome-cidade">Nome da Cidade / Bairro</label>
-                <input type="text" id="nome-cidade" placeholder="Ex: Centro, Cidade Vizinha X">
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label for="valor-frete">Valor do Frete (R$)</label>
-                <input type="number" id="valor-frete" placeholder="Ex: 15.00">
-            </div>
-        </div>
-        <button onclick="window.salvarFreteBanco()" class="btn-cupom" style="background: #2980b9;">
-            <i class="fas fa-plus-circle"></i> Adicionar Local
-        </button>
-    </div>
-
-    <h3 style="margin-bottom:15px; margin-top:30px;">Locais Ativos</h3>
-    <div class="lista-cupons" id="lista-fretes-render">
-        </div>
-</section>
-
         </main>
     </div>
 
-    <div id="modal-produto" class="modal-admin">
+    <!-- TOAST DE NOTIFICAÇÃO (Fica flutuante sobre a tela) -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle toast-icon"></i>
+        <span class="toast-text" id="toast-text">Ação realizada com sucesso!</span>
+    </div>
+
+    <!-- MODAL NOVO PRODUTO -->
+    <div class="modal-overlay" id="modal-produto">
         <div class="modal-content">
-            <span class="close" onclick="window.fecharModal()">&times;</span>
-            <h2 id="titulo-modal">Novo Produto</h2>
+            <button class="close" onclick="fecharModalVisivel()"><i class="fas fa-times"></i></button>
+            <h2 id="titulo-modal" style="font-family: 'Syne', sans-serif; font-size: 22px; margin-bottom: 24px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 16px;">Novo Produto</h2>
             
             <form id="form-produto" onsubmit="window.salvarProduto(event)">
                 <div class="form-group">
                     <label for="prod-nome">Nome do Produto</label>
-                    <input type="text" id="prod-nome" required>
+                    <input type="text" id="prod-nome" class="form-input" placeholder="Ex: Tênis Nike Air Force" required>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label for="prod-categoria">Categoria</label>
-                        <select id="prod-categoria" onchange="window.atualizarSubcategorias()" required>
+                        <select id="prod-categoria" class="form-input" onchange="window.atualizarSubcategorias()" required>
                             <option value="">Selecione</option>
                             <option value="masculino">Masculino</option>
                             <option value="feminino">Feminino</option>
@@ -260,57 +717,123 @@
                     </div>
                     <div class="form-group">
                         <label for="prod-sub">Subcategoria</label>
-                        <select id="prod-sub" disabled>
+                        <select id="prod-sub" class="form-input" disabled>
                             <option value="">Selecione a categoria primeiro</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label for="prod-preco">Preço (Ex: 99,90)</label>
-                        <input type="text" id="prod-preco" required>
+                        <input type="text" id="prod-preco" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label for="prod-antigo">Preço Antigo (Opcional)</label>
-                        <input type="text" id="prod-antigo">
+                        <input type="text" id="prod-antigo" class="form-input">
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="prod-estoque">Estoque (unidades)</label>
-                    <input type="number" id="prod-estoque" value="10" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prod-estoque">Estoque Inicial</label>
+                        <input type="number" id="prod-estoque" class="form-input" value="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prod-tamanhos">Tamanhos Disponíveis</label>
+                        <input type="text" id="prod-tamanhos" class="form-input" placeholder="Ex: P, M, G ou 38, 40">
+                    </div>
                 </div>
                 <div class="form-group">
-    <label for="prod-tamanhos">Tamanhos Disponíveis (Separe por vírgula: P, M, G ou 38, 40)</label>
-    <input type="text" id="prod-tamanhos" placeholder="Ex: P, M, G ou 37, 38, 39">
-</div>
-
-                <div class="form-group">
-                    <label for="prod-resumo">Resumo (aparece na vitrine)</label>
-                    <textarea id="prod-resumo" rows="2"></textarea>
+                    <label for="prod-resumo">Resumo Breve</label>
+                    <textarea id="prod-resumo" class="form-input" rows="2" placeholder="Texto curto que aparece na vitrine principal..."></textarea>
                 </div>
-                
                 <div class="form-group">
                     <label for="prod-desc">Descrição Completa</label>
-                    <textarea id="prod-desc" rows="4"></textarea>
+                    <textarea id="prod-desc" class="form-input" rows="4" placeholder="Detalhes completos do produto..."></textarea>
                 </div>
-
-                <div class="form-group">
-                    <label>Galeria de Fotos (até 5)</label>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Galeria de Fotos (até 5 imagens)</label>
                     <input type="file" id="input-arquivo-foto" multiple hidden>
-                    <button type="button" onclick="document.getElementById('input-arquivo-foto').click()" class="btn-upload">Adicionar Fotos</button>
-                    <div id="galeria-preview" class="galeria-preview-container"></div>
-                    <p id="status-upload"></p>
+                    <button type="button" onclick="document.getElementById('input-arquivo-foto').click()" class="btn btn-ghost" style="width: 100%; border: 2px dashed var(--border2); padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px;">
+                        <i class="fas fa-cloud-upload-alt fa-2x" style="margin-bottom: 12px; color: var(--accent2);"></i>
+                        <span style="font-weight: 600; font-size: 14px; color: var(--text);">Clique aqui para fazer Upload</span>
+                    </button>
+                    <div id="galeria-preview" style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;"></div>
+                    <p id="status-upload" style="color: var(--green); margin-top: 10px; font-weight: 600; font-size: 13px;"></p>
                 </div>
-
-                <button type="submit" class="btn-save">Salvar Produto</button>
+                <div style="display: flex; gap: 16px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+                    <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="fecharModalVisivel()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-save" style="flex: 2; font-size: 15px;">Salvar Produto</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <script type="module" src="../js/dashboard.js"></script> <script type="module" src="../js/inventory.js"></script>
+    <!-- Biblioteca para Gráficos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    
+    <!-- SCRIPTS CORE -->
+    <script type="module" src="../js/dashboard.js"></script> 
+    <script type="module" src="../js/inventory.js"></script>
     <script type="module" src="../js/sales.js"></script>
 
+    <!-- Script Controlador de Interface -->
+    <script>
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('menu-overlay').classList.toggle('ativo');
+        }
+
+        function fecharModalVisivel() {
+            document.getElementById('modal-produto').classList.remove('open');
+            setTimeout(() => { if(window.fecharModal) window.fecharModal(); }, 300);
+        }
+
+        const oldAbrirModal = window.abrirModal;
+        window.abrirModal = function() {
+            if(oldAbrirModal) oldAbrirModal(); 
+            document.getElementById('modal-produto').classList.add('open');
+        };
+
+        window.alternarAba = function(idAba, elementoBtn) {
+            document.querySelectorAll('.secao-admin').forEach(sec => sec.classList.remove('ativa'));
+            document.querySelectorAll('.btn-menu-admin').forEach(btn => btn.classList.remove('ativo'));
+            
+            const secaoAtiva = document.getElementById('sec-' + idAba);
+            if(secaoAtiva) secaoAtiva.classList.add('ativa');
+            
+            if(elementoBtn) {
+                elementoBtn.classList.add('active');
+            } else {
+                const btnCorrespondente = document.querySelector(`[onclick*="alternarAba('${idAba}'"]`);
+                if(btnCorrespondente) btnCorrespondente.classList.add('active');
+            }
+
+            // Mostra a barra de pesquisa apenas na aba de produtos
+            const searchBar = document.getElementById('search-container');
+            if (searchBar) {
+                searchBar.style.display = (idAba === 'produtos') ? 'flex' : 'none';
+            }
+
+            const titulos = {
+                'dashboard': 'Dashboard Principal',
+                'produtos': 'Inventário e Catálogo',
+                'vendas': 'Gestão de Pedidos',
+                'cupons': 'Cupons de Desconto',
+                'banners': 'Gestão de Banners',
+                'notas': 'Bloco de Notas',
+                'logistica': 'Logística e Fretes'
+            };
+            if(titulos[idAba]) document.getElementById('page-title').textContent = titulos[idAba];
+        };
+
+        // Salvar/Carregar Rascunho
+        const rascunho = document.getElementById('meu-rascunho');
+        if (rascunho) {
+            rascunho.value = localStorage.getItem('jb_rascunho_admin') || '';
+            rascunho.addEventListener('input', () => {
+                localStorage.setItem('jb_rascunho_admin', rascunho.value);
+            });
+        }
+    </script>
 </body>
 </html>
